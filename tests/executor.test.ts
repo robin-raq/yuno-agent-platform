@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { estimateTokens, parseSignal, stripDecision, toolEndpoint } from '../src/runtime/executor';
+import { clampSignal, estimateTokens, parseSignal, stripDecision, toolEndpoint } from '../src/runtime/executor';
 
 describe('parseSignal', () => {
   it('reads the DECISION line case-insensitively', () => {
@@ -23,6 +23,18 @@ describe('estimateTokens', () => {
   it('approximates chars/4 and is non-negative', () => {
     expect(estimateTokens('abcd', 'efgh')).toBe(2);
     expect(estimateTokens('', '')).toBe(0);
+  });
+});
+
+describe('clampSignal', () => {
+  it('passes through a signal that is in the routable set', () => {
+    expect(clampSignal('reject', ['approve', 'reject'])).toBe('reject');
+  });
+  it('falls back to complete when available and the signal is off-set', () => {
+    expect(clampSignal('approve', ['complete'])).toBe('complete');
+  });
+  it('fails CLOSED on an approval gate — defaults to reject, never approve', () => {
+    expect(clampSignal('complete', ['approve', 'reject'])).toBe('reject');
   });
 });
 

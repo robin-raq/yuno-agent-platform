@@ -17,6 +17,18 @@ export function stripDecision(output: string): string {
 }
 
 /**
+ * Clamp a parsed signal to the node's routable set — the LLM can't be trusted to stay in-set.
+ * Fails safe: prefer `complete`, then the conservative `reject` (so an approval gate fails CLOSED
+ * rather than auto-approving), and only fall back to the first allowed signal as a last resort.
+ */
+export function clampSignal(signal: Signal, allowed: Signal[]): Signal {
+  if (allowed.includes(signal)) return signal;
+  if (allowed.includes('complete')) return 'complete';
+  if (allowed.includes('reject')) return 'reject';
+  return allowed[0];
+}
+
+/**
  * Fallback token estimate (~4 chars/token), used only when Goose does not return real usage
  * (e.g. a failed run). Successful runs use the real input/output/total counts from
  * `goose run --output-format json`.
@@ -58,9 +70,7 @@ export function makeGooseExecutor(agents: AgentsRepo): NodeExecutor {
     });
     const raw = res.ok ? res.output : res.error ?? 'agent error';
 
-    // Clamp to a routable signal — the LLM can't be trusted to stay in-set.
-    let signal = parseSignal(raw);
-    if (!allowed.includes(signal)) signal = allowed.includes('complete') ? 'complete' : allowed[0];
+    const signal = clampSignal(parseSignal(raw), allowed);
 
     const tokens = res.usage?.totalTokens ?? estimateTokens(message, raw);
     return { signal, output: stripDecision(raw) || raw, tokens };
