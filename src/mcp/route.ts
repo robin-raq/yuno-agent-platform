@@ -3,6 +3,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import type { AgentsRepo } from '../db/agents';
 import type { ToolContext, ToolDef, ToolRegistry } from '../tools';
+import { isActionBlocked } from '../tools/guardrails';
 
 interface McpDeps {
   agents: AgentsRepo;
@@ -17,6 +18,11 @@ function buildMcpServer(tools: ToolDef[], ctx: ToolContext): McpServer {
       tool.name,
       { description: tool.description, inputSchema: tool.inputSchema },
       async (args: Record<string, unknown>) => {
+        // Guardrail denylist — enforced before the handler runs, so a blocked action never executes.
+        if (isActionBlocked(tool.name, ctx.guardrails)) {
+          const blocked = { status: 'blocked', reason: `${tool.name} is blocked by this agent's guardrails` };
+          return { content: [{ type: 'text' as const, text: JSON.stringify(blocked) }], isError: true };
+        }
         try {
           const result = await tool.handler(args, ctx);
           return { content: [{ type: 'text' as const, text: JSON.stringify(result) }] };
@@ -51,7 +57,11 @@ export function registerMcpRoutes(app: FastifyInstance, deps: McpDeps): void {
     }
 
     const tools = deps.registry.forAgent(agent.tools);
-    const ctx: ToolContext = { agentId: agent.id, runId: request.query.runId };
+    const ctx: ToolContext = {
+      agentId: agent.id,
+      runId: request.query.runId,
+      guardrails: agent.guardrails,
+    };
     const server = buildMcpServer(tools, ctx);
     const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
     reply.raw.on('close', () => void transport.close());

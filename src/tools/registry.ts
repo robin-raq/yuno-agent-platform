@@ -1,9 +1,12 @@
 import type { ZodRawShape } from 'zod';
+import type { Guardrails } from '../domain/types';
 
 /** Context handed to every tool call — lets a handler know who is calling and for which run. */
 export interface ToolContext {
   agentId: string;
   runId?: string;
+  /** The calling agent's guardrails — handlers enforce value-based policy (e.g. approval threshold). */
+  guardrails?: Guardrails;
 }
 
 /**
