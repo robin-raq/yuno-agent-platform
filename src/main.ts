@@ -1,7 +1,11 @@
 import { buildServer } from './server';
+import { getDb } from './db/db';
+import { seedTemplates } from './db/seed';
 import { config, hasGoose, hasTelegram } from './config';
 
-const app = buildServer();
+const db = getDb();
+seedTemplates(db); // idempotent — ensures the two workflow templates exist on boot
+const app = buildServer(db);
 
 app
   .listen({ port: config.port, host: '0.0.0.0' })

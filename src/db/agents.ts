@@ -51,10 +51,10 @@ export function makeAgentsRepo(db: DB) {
       return row ? toAgent(row) : null;
     },
 
-    create(input: CreateAgentInput): Agent {
+    create(input: CreateAgentInput, id: string = nanoid(10)): Agent {
       const now = new Date().toISOString();
       const agent: Agent = {
-        id: nanoid(10),
+        id,
         createdAt: now,
         updatedAt: now,
         ...input,
@@ -108,6 +108,11 @@ export function makeAgentsRepo(db: DB) {
         updated_at: next.updatedAt,
       });
       return next;
+    },
+
+    /** Idempotent insert by fixed id — used to seed template agents without duplicating on restart. */
+    upsert(id: string, input: CreateAgentInput): Agent {
+      return this.get(id) ?? this.create(input, id);
     },
 
     remove(id: string): boolean {
