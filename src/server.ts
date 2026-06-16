@@ -13,6 +13,7 @@ import { registerHealth } from './routes/health';
 import { registerAgents } from './routes/agents';
 import { registerWorkflows } from './routes/workflows';
 import { registerRuns } from './routes/runs';
+import { registerTools } from './routes/tools';
 
 export interface ServerDeps {
   /** Inject a fake executor in tests; defaults to the real Goose-backed one. */
@@ -33,6 +34,7 @@ export function buildServer(db: DB = getDb(), deps: ServerDeps = {}): FastifyIns
   registerAgents(app, agents);
   registerWorkflows(app, workflows);
   registerRuns(app, runs, runService);
+  registerTools(app, registry);
   registerMcpRoutes(app, { agents, registry });
   return app;
 }
