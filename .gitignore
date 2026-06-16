@@ -1,0 +1,38 @@
+# --- secrets: never commit real values ---
+.env
+.env.*
+!.env.example
+
+# --- node / build ---
+node_modules/
+dist/
+build/
+.next/
+*.tsbuildinfo
+coverage/
+
+# --- goose / runtime state ---
+.goose/
+*.sqlite
+*.sqlite-journal
+data/*.db
+
+# --- demo intermediates (keep final demo/demo.mp4) ---
+demo/raw/
+demo/audio/
+demo/clips/
+*.wav
+
+# --- design captures (style-guide.md is the artifact; not scraped imagery / QA shots) ---
+design/*.png
+design/mockup-shots/
+
+# --- os / editor ---
+.DS_Store
+.vscode/
+.idea/
+
+# --- private notes (global convention) ---
+review_docs/
+scratch/
+notes/

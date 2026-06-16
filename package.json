@@ -1,0 +1,31 @@
+{
+  "name": "yuno-agent-platform",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "dev": "tsx watch src/main.ts",
+    "start": "tsx src/main.ts",
+    "seed": "tsx src/db/seed.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "verify": "bash scripts/verify.sh"
+  },
+  "dependencies": {
+    "@fastify/static": "^7.0.4",
+    "better-sqlite3": "^11.8.1",
+    "dotenv": "^16.4.7",
+    "fastify": "^4.28.1",
+    "nanoid": "^5.0.9",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^22.10.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3",
+    "vitest": "^2.1.8"
+  }
+}

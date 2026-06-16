@@ -1,0 +1,641 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Yuno Agents — Orchestration Platform (mockup)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Titillium+Web:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --y-primary:#3E4FE0; --y-primary-700:#2E3CB8; --y-primary-100:#E8EAF5; --y-primary-50:#F2F4FC;
+    --y-accent:#E0ED80;
+    --y-ink:#282A30; --y-text-muted:#6C6F75; --y-text-faint:#92959B;
+    --y-bg:#FFFFFF; --y-surface:#FCFCFF; --y-surface-2:#F6F7FA; --y-surface-lav:#DBDFF1;
+    --y-border:#ECEFF2; --y-success:#1FA971; --y-warning:#E6A23C; --y-danger:#E5484D;
+    --y-radius:8px; --y-radius-lg:16px; --y-radius-pill:999px;
+    --y-shadow-sm:0 1px 2px rgba(40,42,48,.06),0 1px 3px rgba(40,42,48,.04);
+    --y-shadow-md:0 6px 24px rgba(40,42,48,.08);
+    --sidebar:248px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{font-family:"Titillium Web",Impact,system-ui,-apple-system,sans-serif;color:var(--y-ink);
+    background:var(--y-bg);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  h1,h2,h3,h4{font-weight:400;margin:0;color:var(--y-ink)}
+  h1{font-size:30px;letter-spacing:-.3px} h2{font-size:22px} h3{font-size:17px;font-weight:600} h4{font-size:14px;font-weight:600}
+  a{color:var(--y-primary);text-decoration:none}
+  .muted{color:var(--y-text-muted)} .faint{color:var(--y-text-faint)} .small{font-size:13px}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px}
+
+  /* layout */
+  .app{display:flex;min-height:100vh}
+  .sidebar{width:var(--sidebar);flex:0 0 var(--sidebar);background:var(--y-surface);border-right:1px solid var(--y-border);
+    padding:20px 14px;position:sticky;top:0;height:100vh;display:flex;flex-direction:column;gap:6px}
+  .brand{display:flex;align-items:center;gap:10px;padding:6px 10px 18px}
+  .brand .mark{font-size:24px;font-weight:700;color:var(--y-primary);letter-spacing:-.5px}
+  .brand .sub{font-size:11px;color:var(--y-text-faint);text-transform:uppercase;letter-spacing:.12em}
+  .nav-item{display:flex;align-items:center;gap:11px;padding:9px 11px;border-radius:var(--y-radius);
+    color:var(--y-text-muted);cursor:pointer;font-size:14.5px;user-select:none}
+  .nav-item:hover{background:var(--y-surface-2)}
+  .nav-item.active{background:var(--y-primary-100);color:var(--y-primary);font-weight:600}
+  .nav-item .ic{width:18px;height:18px;flex:0 0 18px}
+  .nav-sep{height:1px;background:var(--y-border);margin:8px 6px}
+  .sidebar .foot{margin-top:auto;padding:10px;border-top:1px solid var(--y-border);font-size:12px;color:var(--y-text-faint)}
+
+  .main{flex:1;min-width:0;display:flex;flex-direction:column}
+  .topbar{height:60px;border-bottom:1px solid var(--y-border);display:flex;align-items:center;
+    justify-content:space-between;padding:0 28px;background:rgba(255,255,255,.85);backdrop-filter:blur(6px);position:sticky;top:0;z-index:5}
+  .crumb{font-size:13px;color:var(--y-text-faint)}
+  .live-pill{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:var(--y-text-muted);
+    background:var(--y-surface-2);border:1px solid var(--y-border);padding:5px 11px;border-radius:var(--y-radius-pill)}
+  .live-dot{width:8px;height:8px;border-radius:50%;background:var(--y-success);box-shadow:0 0 0 0 rgba(31,169,113,.5);animation:pulse 1.8s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(31,169,113,.45)}70%{box-shadow:0 0 0 7px rgba(31,169,113,0)}100%{box-shadow:0 0 0 0 rgba(31,169,113,0)}}
+  .content{padding:28px;max-width:1180px;width:100%}
+  .page-head{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:22px;gap:16px}
+  .page-head p{margin:6px 0 0;color:var(--y-text-muted);font-size:14px}
+
+  /* primitives */
+  .btn{display:inline-flex;align-items:center;gap:8px;border:1px solid transparent;border-radius:var(--y-radius-pill);
+    padding:9px 18px;font-family:inherit;font-size:14px;cursor:pointer;background:var(--y-primary);color:#fff;font-weight:600}
+  .btn:hover{background:var(--y-primary-700)}
+  .btn.ghost{background:var(--y-primary-100);color:var(--y-primary)}
+  .btn.ghost:hover{background:var(--y-surface-lav)}
+  .btn.line{background:#fff;border-color:var(--y-border);color:var(--y-ink);font-weight:400;border-radius:var(--y-radius)}
+  .btn.line:hover{background:var(--y-surface-2)}
+  .btn.sm{padding:6px 13px;font-size:13px}
+  .btn.danger{background:#fff;border-color:#f3c3c5;color:var(--y-danger);border-radius:var(--y-radius)}
+
+  .card{background:var(--y-surface);border:1px solid var(--y-border);border-radius:var(--y-radius-lg);box-shadow:var(--y-shadow-md);padding:20px}
+  .grid{display:grid;gap:18px}
+  .metrics{grid-template-columns:repeat(4,1fr)}
+  .metric .k{font-size:32px;font-weight:600;letter-spacing:-.5px}
+  .metric .l{font-size:13px;color:var(--y-text-muted);margin-top:2px}
+  .metric .d{font-size:12px;margin-top:8px}
+  .up{color:var(--y-success)} .down{color:var(--y-danger)}
+
+  table{width:100%;border-collapse:collapse}
+  th{text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--y-text-faint);
+    font-weight:600;padding:10px 12px;background:var(--y-surface-2);border-bottom:1px solid var(--y-border)}
+  td{padding:12px;border-bottom:1px solid var(--y-border);font-size:14px;vertical-align:middle}
+  tr:last-child td{border-bottom:none}
+  tbody tr:hover{background:var(--y-primary-50)}
+  .table-wrap{background:var(--y-surface);border:1px solid var(--y-border);border-radius:var(--y-radius-lg);overflow:hidden;box-shadow:var(--y-shadow-sm)}
+
+  .pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:3px 10px;border-radius:var(--y-radius-pill);font-weight:600}
+  .pill .dot{width:7px;height:7px;border-radius:50%}
+  .pill.ok{background:rgba(31,169,113,.12);color:#147a52} .pill.ok .dot{background:var(--y-success)}
+  .pill.run{background:var(--y-primary-100);color:var(--y-primary)} .pill.run .dot{background:var(--y-primary)}
+  .pill.wait{background:rgba(230,162,60,.14);color:#9c6a13} .pill.wait .dot{background:var(--y-warning)}
+  .pill.fail{background:rgba(229,72,77,.12);color:#b3373b} .pill.fail .dot{background:var(--y-danger)}
+  .pill.idle{background:var(--y-surface-2);color:var(--y-text-muted)} .pill.idle .dot{background:var(--y-text-faint)}
+  .pill.tag{background:var(--y-primary-50);color:var(--y-primary);font-weight:400}
+  .pill.lime{background:var(--y-accent);color:#41510a}
+
+  .chan{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--y-text-muted)}
+  .tg{color:#229ED9;font-weight:600}
+
+  .avatar{width:34px;height:34px;border-radius:var(--y-radius);background:var(--y-primary-100);color:var(--y-primary);
+    display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex:0 0 34px}
+  .row{display:flex;align-items:center;gap:12px}
+  .between{display:flex;align-items:center;justify-content:space-between;gap:12px}
+
+  /* feed / logs */
+  .feed{display:flex;flex-direction:column;gap:2px;max-height:340px;overflow:auto}
+  .feed .ev{display:flex;gap:10px;padding:8px 6px;border-bottom:1px solid var(--y-border);font-size:13px}
+  .feed .ev:last-child{border-bottom:none}
+  .feed .t{color:var(--y-text-faint);flex:0 0 64px;font-variant-numeric:tabular-nums}
+  .lvl{flex:0 0 8px;width:8px;height:8px;border-radius:50%;margin-top:6px}
+  .lvl.info{background:var(--y-primary)} .lvl.tool{background:var(--y-accent)} .lvl.ok{background:var(--y-success)} .lvl.warn{background:var(--y-warning)}
+
+  /* sections */
+  section.screen{display:none;animation:fade .18s ease}
+  section.screen.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+  /* agent editor */
+  .editor{display:grid;grid-template-columns:200px 1fr;gap:0;background:var(--y-surface);border:1px solid var(--y-border);
+    border-radius:var(--y-radius-lg);overflow:hidden;box-shadow:var(--y-shadow-sm)}
+  .etabs{border-right:1px solid var(--y-border);padding:12px;display:flex;flex-direction:column;gap:2px;background:var(--y-surface-2)}
+  .etab{padding:9px 12px;border-radius:var(--y-radius);font-size:14px;color:var(--y-text-muted);cursor:pointer}
+  .etab:hover{background:#fff} .etab.active{background:#fff;color:var(--y-primary);font-weight:600;box-shadow:var(--y-shadow-sm)}
+  .epane{padding:24px;display:none} .epane.active{display:block}
+  .field{margin-bottom:18px} .field label{display:block;font-size:13px;font-weight:600;margin-bottom:6px}
+  .field .hint{font-size:12px;color:var(--y-text-faint);margin-bottom:6px}
+  input[type=text],input[type=number],select,textarea{width:100%;font-family:inherit;font-size:14px;color:var(--y-ink);
+    border:1px solid var(--y-border);border-radius:var(--y-radius);padding:9px 11px;background:#fff}
+  textarea{min-height:96px;resize:vertical} input:focus,textarea:focus,select:focus{outline:2px solid var(--y-primary-100);border-color:var(--y-primary)}
+  .toggle-row{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--y-border)}
+  .toggle-row:last-child{border-bottom:none}
+  .sw{width:40px;height:23px;border-radius:999px;background:var(--y-border);position:relative;cursor:pointer;flex:0 0 40px}
+  .sw.on{background:var(--y-primary)} .sw::after{content:"";position:absolute;width:17px;height:17px;border-radius:50%;background:#fff;top:3px;left:3px;transition:.15s}
+  .sw.on::after{left:20px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{font-size:13px;padding:5px 11px;border-radius:var(--y-radius-pill);background:var(--y-primary-100);color:var(--y-primary)}
+  .chip.off{background:var(--y-surface-2);color:var(--y-text-muted)}
+  .kv{display:flex;gap:10px;margin-bottom:8px} .kv input{flex:1}
+
+  /* workflow graph */
+  .canvas{background:
+      radial-gradient(circle at 1px 1px, var(--y-border) 1px, transparent 0) 0 0/22px 22px,
+      var(--y-surface);
+    border:1px solid var(--y-border);border-radius:var(--y-radius-lg);position:relative;box-shadow:var(--y-shadow-sm);overflow:hidden}
+  .legend{position:absolute;right:14px;top:14px;background:#fff;border:1px solid var(--y-border);border-radius:var(--y-radius);
+    padding:10px 12px;font-size:12px;box-shadow:var(--y-shadow-sm);display:flex;flex-direction:column;gap:6px}
+  .legend .li{display:flex;align-items:center;gap:8px}
+  .legend .ln{width:22px;height:0;border-top:2px solid var(--y-primary)} .legend .ln.app{border-top-color:var(--y-success)}
+  .legend .ln.rej{border-top:2px dashed var(--y-danger)}
+  .gnode{position:absolute;width:150px;background:#fff;border:1.5px solid var(--y-border);border-radius:12px;
+    padding:11px 13px;box-shadow:var(--y-shadow-md);cursor:grab}
+  .gnode .gh{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+  .gnode .role{font-size:11px;color:var(--y-text-faint);text-transform:uppercase;letter-spacing:.05em}
+  .gnode .nm{font-weight:600;font-size:14px}
+  .gnode.done{border-color:var(--y-success)} .gnode.running{border-color:var(--y-primary);box-shadow:0 0 0 4px var(--y-primary-100)}
+  .gnode.wait{border-color:var(--y-warning)} .gnode.gate{border-style:dashed;border-color:var(--y-warning);background:#fffdf7}
+
+  /* message trail */
+  .trail{display:flex;flex-direction:column;gap:14px;max-height:520px;overflow:auto;padding-right:6px}
+  .msg{display:flex;gap:11px}
+  .msg .body{flex:1;background:var(--y-surface-2);border:1px solid var(--y-border);border-radius:12px;padding:11px 13px}
+  .msg .meta{font-size:12px;color:var(--y-text-faint);margin-bottom:4px;display:flex;gap:8px;align-items:center}
+  .msg .meta b{color:var(--y-ink);font-weight:600} .arr{color:var(--y-primary)}
+  .msg.tool .body{background:#fbfdf0;border-color:#e9efbf}
+  .msg .toolcall{font-size:12.5px;color:var(--y-text-muted)}
+  .twocol{display:grid;grid-template-columns:1.3fr .9fr;gap:18px;align-items:start}
+  @media(max-width:980px){.twocol{grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,1fr)}}
+
+  /* telegram */
+  .phone{max-width:330px;border:1px solid var(--y-border);border-radius:20px;overflow:hidden;box-shadow:var(--y-shadow-md);background:#fff}
+  .phone .hd{background:#229ED9;color:#fff;padding:12px 14px;display:flex;align-items:center;gap:10px}
+  .phone .body{background:#EAF4FB;padding:14px;min-height:330px;display:flex;flex-direction:column;gap:9px}
+  .bub{max-width:80%;padding:8px 11px;border-radius:13px;font-size:13.5px;line-height:1.4}
+  .bub.in{align-self:flex-start;background:#fff;border-bottom-left-radius:4px}
+  .bub.out{align-self:flex-end;background:#D6F0C9;border-bottom-right-radius:4px}
+  .bub .ts{display:block;font-size:10px;color:var(--y-text-faint);margin-top:3px;text-align:right}
+  .approve-card{border:1.5px dashed var(--y-warning);background:#fffdf7;border-radius:12px;padding:16px}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="mark">yuno</span>
+      <div><div class="sub">Agents</div></div>
+    </div>
+    <div class="nav-item active" data-route="dashboard"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="11" width="7" height="10" rx="1.5"/><rect x="3" y="15" width="7" height="6" rx="1.5"/></svg> Dashboard</div>
+    <div class="nav-item" data-route="agents"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20c.6-3.3 3-5 5.5-5s4.9 1.7 5.5 5"/><circle cx="17.5" cy="8" r="2.4"/><path d="M16 14.4c2 .3 3.6 1.8 4 5"/></svg> Agents</div>
+    <div class="nav-item" data-route="editor"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 17.5 14 7.5l2.5 2.5L6.5 20H4z"/><path d="M14.5 7 17 4.5 19.5 7 17 9.5z"/></svg> Agent Editor</div>
+    <div class="nav-sep"></div>
+    <div class="nav-item" data-route="workflows"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="6" height="4" rx="1"/><rect x="15" y="9" width="6" height="4" rx="1"/><rect x="3" y="16" width="6" height="4" rx="1"/><path d="M9 6h3v12H9M12 11h3"/></svg> Workflows</div>
+    <div class="nav-item" data-route="builder"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="6" cy="6" r="2.4"/><circle cx="18" cy="6" r="2.4"/><circle cx="12" cy="18" r="2.4"/><path d="M8 7l8 0M7 8l4 8M17 8l-4 8"/></svg> Workflow Builder</div>
+    <div class="nav-item" data-route="runs"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 4v16M5 4l13 4-13 4"/></svg> Runs</div>
+    <div class="nav-item" data-route="channels"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5h16v11H8l-4 3z"/></svg> Channels</div>
+    <div class="nav-item" data-route="evals"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M8.5 12l2.2 2.2L15.5 9.5"/></svg> Evaluations</div>
+    <div class="foot">Goose 1.37 · Anthropic<br/>Local + Railway · v0.1</div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <div><div class="crumb" id="crumb">Workspace / Dashboard</div></div>
+      <div class="row">
+        <span class="live-pill"><span class="live-dot"></span> Live · SSE connected</span>
+        <span class="avatar">YO</span>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ============ DASHBOARD ============ -->
+      <section class="screen active" id="dashboard">
+        <div class="page-head">
+          <div><h1>Dashboard</h1><p>Live view of agents, runs, and spend across the workspace.</p></div>
+          <button class="btn" data-go="builder">+ New run</button>
+        </div>
+        <div class="grid metrics" style="margin-bottom:18px">
+          <div class="card metric"><div class="k">7</div><div class="l">Configured agents</div><div class="d muted">2 on Telegram</div></div>
+          <div class="card metric"><div class="k">1</div><div class="l">Active runs</div><div class="d up">Cross-Border Payout · awaiting approval</div></div>
+          <div class="card metric"><div class="k">48.2k</div><div class="l">Tokens today</div><div class="d up">▲ 12% vs yesterday</div></div>
+          <div class="card metric"><div class="k">$0.74</div><div class="l">Cost today</div><div class="d muted">budget $5.00</div></div>
+        </div>
+        <div class="twocol">
+          <div class="card">
+            <div class="between" style="margin-bottom:12px"><h3>Live event feed</h3><span class="pill run"><span class="dot"></span>streaming</span></div>
+            <div class="feed" id="liveFeed">
+              <div class="ev"><span class="t">22:58:08</span><span class="lvl ok"></span><div><b>Collect</b> <span class="mono">successful_payment $8,412.00</span> · TEST · run <span class="mono">#R-2291</span></div></div>
+              <div class="ev"><span class="t">22:58:04</span><span class="lvl tool"></span><div><b>Compliance</b> called <span class="mono">screen_sanctions(name:"R. Solano")</span> → <b>HIT</b> · routed back to Intake</div></div>
+              <div class="ev"><span class="t">22:58:01</span><span class="lvl info"></span><div><b>Intake</b> → <b>Compliance</b> handoff · run <span class="mono">#R-2291</span></div></div>
+              <div class="ev"><span class="t">22:57:55</span><span class="lvl tool"></span><div><b>FX Quote</b> called <span class="mono">get_fx_rate(USD→MXN)</span> → 17.18</div></div>
+              <div class="ev"><span class="t">22:57:49</span><span class="lvl warn"></span><div>Approval gate opened — payout <b>$8,400</b> exceeds cap <b>$5,000</b></div></div>
+              <div class="ev"><span class="t">22:57:42</span><span class="lvl ok"></span><div>Telegram message received from <span class="tg">@maria_ops</span> → Intake</div></div>
+              <div class="ev"><span class="t">22:57:30</span><span class="lvl info"></span><div>Run <span class="mono">#R-2290</span> <b>Dev Pipeline</b> completed · 3 steps · 9.1k tok</div></div>
+              <div class="ev"><span class="t">22:57:12</span><span class="lvl tool"></span><div><b>Reviewer</b> rejected → feedback loop to <b>Coder</b> (attempt 2)</div></div>
+            </div>
+          </div>
+          <div class="card">
+            <h3 style="margin-bottom:12px">Agents</h3>
+            <div style="display:flex;flex-direction:column;gap:11px">
+              <div class="between"><div class="row"><span class="avatar">IN</span><div><div style="font-weight:600">Intake</div><div class="small faint">remittance · Telegram</div></div></div><span class="pill run"><span class="dot"></span>busy</span></div>
+              <div class="between"><div class="row"><span class="avatar">CO</span><div><div style="font-weight:600">Compliance</div><div class="small faint">screening</div></div></div><span class="pill run"><span class="dot"></span>busy</span></div>
+              <div class="between"><div class="row"><span class="avatar">FX</span><div><div style="font-weight:600">FX Quote</div><div class="small faint">pricing</div></div></div><span class="pill idle"><span class="dot"></span>idle</span></div>
+              <div class="between"><div class="row"><span class="avatar">PA</span><div><div style="font-weight:600">Payout</div><div class="small faint">settlement (sim)</div></div></div><span class="pill wait"><span class="dot"></span>blocked</span></div>
+              <div class="between"><div class="row"><span class="avatar">CD</span><div><div style="font-weight:600">Coder</div><div class="small faint">dev pipeline</div></div></div><span class="pill idle"><span class="dot"></span>idle</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ AGENTS ============ -->
+      <section class="screen" id="agents">
+        <div class="page-head">
+          <div><h1>Agents</h1><p>Create, configure, and delete the agents your workflows orchestrate.</p></div>
+          <button class="btn" data-go="editor">+ New agent</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Agent</th><th>Role</th><th>Model</th><th>Channels</th><th>Status</th><th></th></tr></thead>
+            <tbody>
+              <tr><td><div class="row"><span class="avatar">IN</span><b>Intake</b></div></td><td>Remittance intake</td><td class="mono">claude-opus-4-8</td><td><span class="chan"><span class="tg">✈ Telegram</span></span></td><td><span class="pill run"><span class="dot"></span>busy</span></td><td><a data-go="editor">Edit</a></td></tr>
+              <tr><td><div class="row"><span class="avatar">CO</span><b>Compliance</b></div></td><td>KYC / sanctions screen</td><td class="mono">claude-opus-4-8</td><td class="faint">internal</td><td><span class="pill run"><span class="dot"></span>busy</span></td><td><a data-go="editor">Edit</a></td></tr>
+              <tr><td><div class="row"><span class="avatar">FX</span><b>FX Quote</b></div></td><td>Rate + fee pricing</td><td class="mono">claude-haiku-4-5</td><td class="faint">internal</td><td><span class="pill idle"><span class="dot"></span>idle</span></td><td><a data-go="editor">Edit</a></td></tr>
+              <tr><td><div class="row"><span class="avatar">PA</span><b>Payout</b></div></td><td>Settlement (simulated)</td><td class="mono">claude-opus-4-8</td><td class="faint">internal</td><td><span class="pill wait"><span class="dot"></span>blocked</span></td><td><a data-go="editor">Edit</a></td></tr>
+              <tr><td><div class="row"><span class="avatar">CD</span><b>Coder</b></div></td><td>Code generation</td><td class="mono">claude-opus-4-8</td><td class="faint">internal</td><td><span class="pill idle"><span class="dot"></span>idle</span></td><td><a data-go="editor">Edit</a></td></tr>
+              <tr><td><div class="row"><span class="avatar">RV</span><b>Reviewer</b></div></td><td>Code review</td><td class="mono">claude-opus-4-8</td><td class="faint">internal</td><td><span class="pill idle"><span class="dot"></span>idle</span></td><td><a data-go="editor">Edit</a></td></tr>
+              <tr><td><div class="row"><span class="avatar">DP</span><b>Deployer</b></div></td><td>Deploy (simulated)</td><td class="mono">claude-haiku-4-5</td><td class="faint">internal</td><td><span class="pill idle"><span class="dot"></span>idle</span></td><td><a data-go="editor">Edit</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ============ AGENT EDITOR ============ -->
+      <section class="screen" id="editor">
+        <div class="page-head">
+          <div><h1>Agent Editor</h1><p>Configuring <b>Compliance</b> — every dimension below persists to the agent config.</p></div>
+          <div class="row"><button class="btn line" data-go="agents">Cancel</button><button class="btn">Save agent</button></div>
+        </div>
+        <div class="editor">
+          <div class="etabs">
+            <div class="etab active" data-pane="p-identity">Identity</div>
+            <div class="etab" data-pane="p-tools">Tools</div>
+            <div class="etab" data-pane="p-channels">Channels</div>
+            <div class="etab" data-pane="p-sched">Schedules</div>
+            <div class="etab" data-pane="p-mem">Memory</div>
+            <div class="etab" data-pane="p-skills">Skills</div>
+            <div class="etab" data-pane="p-rules">Interaction rules</div>
+            <div class="etab" data-pane="p-guard">Guardrails</div>
+          </div>
+          <div>
+            <div class="epane active" id="p-identity">
+              <div class="field"><label>Name</label><input type="text" value="Compliance"/></div>
+              <div class="field"><label>Role</label><input type="text" value="KYC / sanctions screening"/></div>
+              <div class="field"><label>System prompt</label><div class="hint">Defines personality + behavior. Injected into every Goose run.</div>
+                <textarea>You are a payments compliance officer. For each remittance, screen sender and recipient against the sanctions list, verify the amount is within limits, and check the destination corridor is permitted. If anything is missing or fails, send the request BACK to Intake with a precise reason. Be terse and audit-friendly.</textarea></div>
+              <div class="field" style="max-width:280px"><label>Model</label>
+                <select><option>claude-opus-4-8</option><option>claude-sonnet-4-6</option><option>claude-haiku-4-5</option></select></div>
+            </div>
+            <div class="epane" id="p-tools">
+              <div class="field"><label>Tool access</label><div class="hint">Tools this agent may call inside the Goose tool loop.</div>
+                <div class="chips">
+                  <span class="chip">screen_sanctions</span><span class="chip">check_limits</span>
+                  <span class="chip off">get_fx_rate</span><span class="chip off">quote_fees</span>
+                  <span class="chip off">initiate_payout</span><span class="chip off">parse_remittance</span>
+                  <span class="chip off">web_search</span><span class="chip off">shell</span>
+                </div></div>
+              <p class="small faint">Enabled tools appear in indigo. The runtime rejects any tool call outside this allow-list.</p>
+            </div>
+            <div class="epane" id="p-channels">
+              <div class="toggle-row"><div><b>Telegram</b><div class="small faint">Reachable from the @yuno_remit_bot chat</div></div><div class="sw"></div></div>
+              <div class="toggle-row"><div><b>Internal A2A</b><div class="small faint">Receive handoffs from other agents</div></div><div class="sw on"></div></div>
+              <p class="small faint" style="margin-top:14px">Only the <b>Intake</b> agent is bound to Telegram in this workspace. Toggle on to bind a channel.</p>
+            </div>
+            <div class="epane" id="p-sched">
+              <div class="field"><label>Schedules</label><div class="hint">Cron or interval triggers that wake the agent.</div>
+                <div class="kv"><input type="text" value="0 9 * * 1-5 — daily sanctions-list refresh" /><button class="btn line sm">Remove</button></div>
+                <div class="kv"><input type="text" value="@interval 15m — re-screen pending queue" /><button class="btn line sm">Remove</button></div>
+                <button class="btn ghost sm">+ Add schedule</button></div>
+            </div>
+            <div class="epane" id="p-mem">
+              <div class="field"><label>Persistent memory</label><div class="hint">Facts retained across sessions and injected as context.</div>
+                <div class="kv"><input type="text" value="threshold_usd"/><input type="text" value="5000"/></div>
+                <div class="kv"><input type="text" value="blocked_corridors"/><input type="text" value="US→IR, US→KP, US→SY"/></div>
+                <div class="kv"><input type="text" value="escalation_contact"/><input type="text" value="compliance@demo.test"/></div>
+                <button class="btn ghost sm">+ Add fact</button></div>
+            </div>
+            <div class="epane" id="p-skills">
+              <div class="field"><label>Skills</label><div class="hint">Reusable, ordered procedures combining multiple tools.</div></div>
+              <div class="card" style="box-shadow:none;margin-bottom:12px"><h4>full_screen</h4><div class="small muted">1. screen_sanctions(sender) → 2. screen_sanctions(recipient) → 3. check_limits(amount) → 4. verdict</div></div>
+              <div class="card" style="box-shadow:none"><h4>request_more_info</h4><div class="small muted">1. compose missing-field list → 2. handoff back to Intake with reason</div></div>
+              <button class="btn ghost sm" style="margin-top:12px">+ Add skill</button>
+            </div>
+            <div class="epane" id="p-rules">
+              <div class="field"><label>Interaction rules</label><div class="hint">What the agent does autonomously vs. what needs human approval.</div></div>
+              <div class="toggle-row"><div>Screen &amp; score a remittance <span class="pill tag">autonomous</span></div><div class="sw on"></div></div>
+              <div class="toggle-row"><div>Send request back to Intake <span class="pill tag">autonomous</span></div><div class="sw on"></div></div>
+              <div class="toggle-row"><div>Approve payout &gt; threshold <span class="pill wait"><span class="dot"></span>requires approval</span></div><div class="sw"></div></div>
+              <div class="toggle-row"><div>Override a sanctions hit <span class="pill fail"><span class="dot"></span>requires approval</span></div><div class="sw"></div></div>
+            </div>
+            <div class="epane" id="p-guard">
+              <div class="field"><label>Guardrails</label><div class="hint">Hard limits enforced by the runtime, not the prompt.</div></div>
+              <div class="grid" style="grid-template-columns:1fr 1fr;gap:14px">
+                <div class="field"><label>Max tokens / run</label><input type="number" value="20000"/></div>
+                <div class="field"><label>Max cost / run (USD)</label><input type="number" value="1.00"/></div>
+                <div class="field"><label>Rate limit (calls / min)</label><input type="number" value="30"/></div>
+                <div class="field"><label>Approval threshold (USD)</label><input type="number" value="5000"/></div>
+              </div>
+              <div class="field"><label>Blocked actions</label><div class="chips"><span class="chip">initiate_payout</span><span class="chip">shell</span></div></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ WORKFLOWS ============ -->
+      <section class="screen" id="workflows">
+        <div class="page-head">
+          <div><h1>Workflows</h1><p>Connect agents into collaborative pipelines. Load a template or start from scratch.</p></div>
+          <button class="btn" data-go="builder">+ New workflow</button>
+        </div>
+        <div class="grid" style="grid-template-columns:1fr 1fr;gap:18px">
+          <div class="card">
+            <div class="between" style="margin-bottom:8px"><h3>Cross-Border Payout</h3><span class="pill lime">template</span></div>
+            <p class="muted small">Telegram intake → compliance screen → FX quote → human-approved simulated payout. Includes a feedback loop and an approval gate.</p>
+            <div class="row" style="margin:14px 0"><span class="chip">Intake</span><span class="chip">Compliance</span><span class="chip">FX Quote</span><span class="chip">Payout</span></div>
+            <div class="row"><button class="btn sm" data-go="builder">Open builder</button><button class="btn ghost sm" data-go="runview">Run</button></div>
+          </div>
+          <div class="card">
+            <div class="between" style="margin-bottom:8px"><h3>Dev Pipeline</h3><span class="pill lime">template</span></div>
+            <p class="muted small">Coder writes code → Reviewer reviews → rejected loops back to Coder, approved goes to Deployer. The canonical configurable feedback loop.</p>
+            <div class="row" style="margin:14px 0"><span class="chip">Coder</span><span class="chip">Reviewer</span><span class="chip">Deployer</span></div>
+            <div class="row"><button class="btn sm" data-go="builder">Open builder</button><button class="btn ghost sm" data-go="runs">Run</button></div>
+          </div>
+          <div class="card" style="border-style:dashed;box-shadow:none;display:flex;align-items:center;justify-content:center;min-height:150px;flex-direction:column;gap:10px;color:var(--y-text-muted)">
+            <div style="font-size:30px;color:var(--y-text-faint)">+</div><div>Start a blank workflow</div>
+            <button class="btn line sm" data-go="builder">New workflow</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ WORKFLOW BUILDER ============ -->
+      <section class="screen" id="builder">
+        <div class="page-head">
+          <div><h1>Workflow Builder</h1><p>Editing <b>Cross-Border Payout</b> — drag nodes, draw edges, set the condition on each edge.</p></div>
+          <div class="row"><button class="btn line" data-go="workflows">Back</button><button class="btn" data-go="runview">▶ Run workflow</button></div>
+        </div>
+        <div class="twocol">
+          <div class="canvas" style="height:440px">
+            <div class="legend">
+              <div class="li"><span class="ln"></span> on_complete</div>
+              <div class="li"><span class="ln app"></span> on_approve</div>
+              <div class="li"><span class="ln rej"></span> on_reject (feedback)</div>
+            </div>
+            <svg width="100%" height="100%" style="position:absolute;inset:0" viewBox="0 0 720 440">
+              <defs>
+                <marker id="ar" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#3E4FE0"/></marker>
+                <marker id="arg" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#1FA971"/></marker>
+                <marker id="arr" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#E5484D"/></marker>
+              </defs>
+              <!-- intake->compliance -->
+              <path d="M150,80 C210,80 210,150 268,150" fill="none" stroke="#3E4FE0" stroke-width="2" marker-end="url(#ar)"/>
+              <!-- compliance->fx (approve) -->
+              <path d="M420,150 C470,150 470,150 510,150" fill="none" stroke="#1FA971" stroke-width="2" marker-end="url(#arg)"/>
+              <!-- compliance->intake (reject feedback) -->
+              <path d="M300,118 C250,40 130,40 95,58" fill="none" stroke="#E5484D" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arr)"/>
+              <!-- fx->collect -->
+              <path d="M560,184 C548,196 542,200 536,206" fill="none" stroke="#3E4FE0" stroke-width="2" marker-end="url(#ar)"/>
+              <!-- collect->gate -->
+              <path d="M460,240 C408,258 380,282 362,294" fill="none" stroke="#3E4FE0" stroke-width="2" marker-end="url(#ar)"/>
+              <text x="470" y="200" font-size="11" fill="#3E4FE0">invoice · TEST</text>
+              <!-- gate->payout (approve) -->
+              <path d="M300,330 C230,360 180,360 150,360" fill="none" stroke="#1FA971" stroke-width="2" marker-end="url(#arg)"/>
+              <text x="200" y="36" font-size="11" fill="#b3373b">reject → needs info</text>
+              <text x="455" y="140" font-size="11" fill="#147a52">approve</text>
+            </svg>
+            <div class="gnode" style="left:24px;top:54px"><div class="gh"><span class="avatar" style="width:26px;height:26px;flex:0 0 26px;font-size:11px">IN</span><div><div class="role">node · telegram</div><div class="nm">Intake</div></div></div></div>
+            <div class="gnode" style="left:270px;top:120px"><div class="gh"><span class="avatar" style="width:26px;height:26px;flex:0 0 26px;font-size:11px">CO</span><div><div class="role">node</div><div class="nm">Compliance</div></div></div></div>
+            <div class="gnode" style="left:512px;top:120px"><div class="gh"><span class="avatar" style="width:26px;height:26px;flex:0 0 26px;font-size:11px">FX</span><div><div class="role">node</div><div class="nm">FX Quote</div></div></div></div>
+            <div class="gnode" style="left:452px;top:206px"><div class="gh"><span class="avatar" style="width:26px;height:26px;flex:0 0 26px;font-size:11px;background:#d7ecf8;color:#229ED9">✈</span><div><div class="role">node · pay-in (TEST)</div><div class="nm">Collect</div></div></div></div>
+            <div class="gnode gate" style="left:250px;top:286px"><div class="gh">⚠️ <div><div class="role">approval gate</div><div class="nm">if amount &gt; $5,000</div></div></div></div>
+            <div class="gnode" style="left:24px;top:336px"><div class="gh"><span class="avatar" style="width:26px;height:26px;flex:0 0 26px;font-size:11px">PA</span><div><div class="role">node · simulated</div><div class="nm">Payout</div></div></div></div>
+          </div>
+          <div class="card">
+            <h3 style="margin-bottom:6px">Edge: Compliance → Intake</h3>
+            <p class="small faint" style="margin-top:0">The selected transition. Conditions are stored as data, so the loop is configurable — not hardcoded.</p>
+            <div class="field"><label>Condition</label>
+              <select><option>on_reject (feedback loop)</option><option>on_complete</option><option>on_approve</option></select></div>
+            <div class="field"><label>Label</label><input type="text" value="needs info"/></div>
+            <div class="field"><label>Max loop iterations</label><input type="number" value="3"/><div class="hint">Caps feedback cycles so a workflow can't loop forever.</div></div>
+            <button class="btn sm">Update edge</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ RUNS ============ -->
+      <section class="screen" id="runs">
+        <div class="page-head">
+          <div><h1>Runs</h1><p>Execution history across all workflows.</p></div>
+          <div class="row"><button class="btn line sm">All</button><button class="btn line sm">Active</button><button class="btn line sm">Failed</button></div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Run</th><th>Workflow</th><th>Status</th><th>Started</th><th>Duration</th><th>Tokens</th><th>Cost</th></tr></thead>
+            <tbody>
+              <tr style="cursor:pointer" data-go="runview"><td class="mono">#R-2291</td><td>Cross-Border Payout</td><td><span class="pill wait"><span class="dot"></span>awaiting approval</span></td><td>22:57:42</td><td>—</td><td>11.4k</td><td>$0.21</td></tr>
+              <tr><td class="mono">#R-2290</td><td>Dev Pipeline</td><td><span class="pill ok"><span class="dot"></span>completed</span></td><td>22:56:05</td><td>1m 22s</td><td>9.1k</td><td>$0.14</td></tr>
+              <tr><td class="mono">#R-2289</td><td>Cross-Border Payout</td><td><span class="pill ok"><span class="dot"></span>completed</span></td><td>22:48:11</td><td>0m 54s</td><td>7.7k</td><td>$0.12</td></tr>
+              <tr><td class="mono">#R-2288</td><td>Cross-Border Payout</td><td><span class="pill fail"><span class="dot"></span>failed</span></td><td>22:39:02</td><td>0m 31s</td><td>4.2k</td><td>$0.06</td></tr>
+              <tr><td class="mono">#R-2287</td><td>Dev Pipeline</td><td><span class="pill ok"><span class="dot"></span>completed</span></td><td>22:30:55</td><td>2m 03s</td><td>12.6k</td><td>$0.19</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ============ RUN VIEW ============ -->
+      <section class="screen" id="runview">
+        <div class="page-head">
+          <div><h1>Run #R-2291 <span class="pill wait" style="vertical-align:middle"><span class="dot"></span>awaiting approval</span></h1>
+            <p>Cross-Border Payout · started 22:57:42 · 11.4k tokens · $0.21</p></div>
+          <button class="btn line" data-go="runs">Back to runs</button>
+        </div>
+        <div class="twocol">
+          <div class="card">
+            <h3 style="margin-bottom:14px">Inter-agent message trail</h3>
+            <div class="trail">
+              <div class="msg"><span class="avatar" style="width:30px;height:30px;flex:0 0 30px;font-size:12px">✈</span><div class="body">
+                <div class="meta"><b>@maria_ops</b> <span class="arr">→</span> <b>Intake</b> <span class="chan tg">Telegram</span><span style="margin-left:auto">22:57:42</span></div>
+                Send $8,400 from Acme US to Rodrigo Solano in Mexico City, bank account ····4471.</div></div>
+              <div class="msg tool"><span class="avatar" style="width:30px;height:30px;flex:0 0 30px;font-size:12px">IN</span><div class="body">
+                <div class="meta"><b>Intake</b> tool call<span style="margin-left:auto">22:57:45</span></div>
+                <div class="toolcall mono">parse_remittance() → {amount:8400, ccy:"USD", dest:"MX", recipient:"Rodrigo Solano"}</div></div></div>
+              <div class="msg"><span class="avatar" style="width:30px;height:30px;flex:0 0 30px;font-size:12px">IN</span><div class="body">
+                <div class="meta"><b>Intake</b> <span class="arr">→</span> <b>Compliance</b><span style="margin-left:auto">22:57:48</span></div>
+                Normalized remittance ready for screening. Amount 8,400 USD → MXN.</div></div>
+              <div class="msg tool"><span class="avatar" style="width:30px;height:30px;flex:0 0 30px;font-size:12px">CO</span><div class="body">
+                <div class="meta"><b>Compliance</b> tool call<span style="margin-left:auto">22:58:04</span></div>
+                <div class="toolcall mono">screen_sanctions("Rodrigo Solano") → no match · check_limits(8400) → over_threshold</div></div></div>
+              <div class="msg"><span class="avatar" style="width:30px;height:30px;flex:0 0 30px;font-size:12px">FX</span><div class="body">
+                <div class="meta"><b>FX Quote</b> <span class="arr">→</span> <b>run</b><span style="margin-left:auto">22:58:09</span></div>
+                Rate 17.18 USD/MXN, fee $12.00 → recipient gets <b>144,295 MXN</b>. Quote valid 30 min.</div></div>
+              <div class="msg tool"><span class="avatar" style="width:30px;height:30px;flex:0 0 30px;font-size:12px;background:#d7ecf8;color:#229ED9">✈</span><div class="body">
+                <div class="meta"><b>Collect</b> tool call · Telegram Payments<span style="margin-left:auto">22:58:12</span></div>
+                <div class="toolcall mono">send_invoice($8,412.00, TEST) → successful_payment ✓ charge tg_ch_9f2a · provider_test</div></div></div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:18px">
+            <div class="card">
+              <h3 style="margin-bottom:12px">Step states</h3>
+              <div style="display:flex;flex-direction:column;gap:9px">
+                <div class="between"><span class="row"><span class="avatar" style="width:26px;height:26px;flex:0 0 26px;font-size:11px">IN</span> Intake</span><span class="pill ok"><span class="dot"></span>done · 2.1k</span></div>
+                <div class="between"><span class="row"><span class="avatar" style="width:26px;height:26px;flex:0 0 26px;font-size:11px">CO</span> Compliance</span><span class="pill ok"><span class="dot"></span>done · 4.0k</span></div>
+                <div class="between"><span class="row"><span class="avatar" style="width:26px;height:26px;flex:0 0 26px;font-size:11px">FX</span> FX Quote</span><span class="pill ok"><span class="dot"></span>done · 5.3k</span></div>
+                <div class="between"><span class="row"><span class="avatar" style="width:26px;height:26px;flex:0 0 26px;font-size:11px;background:#d7ecf8;color:#229ED9">✈</span> Collect (pay-in)</span><span class="pill ok"><span class="dot"></span>paid · TEST</span></div>
+                <div class="between"><span class="row"><span class="avatar" style="width:26px;height:26px;flex:0 0 26px;font-size:11px">PA</span> Payout</span><span class="pill wait"><span class="dot"></span>blocked</span></div>
+              </div>
+            </div>
+            <div class="approve-card">
+              <div class="row" style="margin-bottom:8px"><span style="font-size:18px">⚠️</span><b>Approval required</b></div>
+              <p class="small muted" style="margin-top:0">Payout of <b>$8,400</b> exceeds the $5,000 auto-approve cap. A human must approve before the Payout agent runs.</p>
+              <div class="row"><button class="btn" id="approveBtn">Approve payout</button><button class="btn danger">Reject</button></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ CHANNELS ============ -->
+      <section class="screen" id="channels">
+        <div class="page-head">
+          <div><h1>Channels</h1><p>External messaging integrations. A human can chat an agent here and get a real, config-driven reply.</p></div>
+          <span class="pill ok"><span class="dot"></span>Telegram bot online</span>
+        </div>
+        <div class="twocol">
+          <div style="display:flex;flex-direction:column;gap:18px">
+            <div class="card">
+              <div class="between"><div class="row"><span class="avatar" style="background:#229ED9;color:#fff">✈</span><div><h3>@yuno_remit_bot</h3><div class="small faint">Telegram · long-poll · bound to <b>Intake</b></div></div></div><span class="pill ok"><span class="dot"></span>online</span></div>
+            </div>
+            <div class="card">
+              <h3 style="margin-bottom:12px">Message log</h3>
+              <div class="feed">
+                <div class="ev"><span class="t">22:57:42</span><span class="lvl ok"></span><div><b>in</b> <span class="tg">@maria_ops</span>: "Send $8,400 from Acme US to Rodrigo Solano…"</div></div>
+                <div class="ev"><span class="t">22:57:50</span><span class="lvl info"></span><div><b>out</b> Intake: "Got it — screening now, I'll confirm the quote shortly."</div></div>
+                <div class="ev"><span class="t">22:58:02</span><span class="lvl info"></span><div><b>out</b> Intake: sent invoice <span class="mono">$8,412.00</span> (Telegram Payments · TEST)</div></div>
+                <div class="ev"><span class="t">22:58:08</span><span class="lvl ok"></span><div><b>in</b> <span class="tg">successful_payment</span> · charge <span class="mono">tg_ch_9f2a…</span> · TEST</div></div>
+                <div class="ev"><span class="t">22:58:12</span><span class="lvl warn"></span><div><b>out</b> Intake: "This payout is over the $5k cap and needs operator approval."</div></div>
+                <div class="ev"><span class="t">22:49:03</span><span class="lvl ok"></span><div><b>in</b> <span class="tg">@maria_ops</span>: "status of my last transfer?"</div></div>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="phone">
+              <div class="hd"><span class="avatar" style="background:#fff;color:#229ED9;width:30px;height:30px;flex:0 0 30px">✈</span><div><div style="font-weight:600">yuno_remit_bot</div><div style="font-size:11px;opacity:.85">bot · Intake agent</div></div></div>
+              <div class="body">
+                <div class="bub in">Send $8,400 from Acme US to Rodrigo Solano in Mexico City, account ····4471 <span class="ts">22:57</span></div>
+                <div class="bub out">Got it — screening the recipient and pricing the FX now. One moment. <span class="ts">22:57</span></div>
+                <div class="bub out">Quote: 17.18 USD/MXN, $12 fee → recipient gets <b>144,295 MXN</b>. To fund it, tap below 👇 <span class="ts">22:58</span></div>
+                <div class="bub out" style="background:#fff;border:1px solid #cfe3f2;max-width:90%">
+                  <div style="font-weight:600;margin-bottom:2px">Yuno · Cross-Border Transfer</div>
+                  <div class="small muted" style="margin:0 0 8px">Fund transfer to Rodrigo Solano (MX)</div>
+                  <div style="display:flex;justify-content:space-between;font-size:12.5px;color:var(--y-text-muted)"><span>Amount + fee</span><b style="color:var(--y-ink)">$8,412.00</b></div>
+                  <button style="margin-top:9px;width:100%;background:#229ED9;color:#fff;border:none;border-radius:8px;padding:9px;font-family:inherit;font-weight:600;cursor:pointer">Pay $8,412.00 · TEST</button>
+                  <span class="ts">22:58</span></div>
+                <div class="bub in">✓ Paid $8,412.00 · test card ····4242 <span class="ts">22:58</span></div>
+                <div class="bub out">Payment received. ⚠️ This is over your $5,000 auto-approve cap, so I've sent the payout to an operator for approval — I'll confirm once it's released. <span class="ts">22:58</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ EVALUATIONS ============ -->
+      <section class="screen" id="evals">
+        <div class="page-head">
+          <div><h1>Evaluations</h1><p>Replay golden scenarios through the real engine and score the outcomes — so you change a config on evidence, not a hunch.</p></div>
+          <button class="btn">▶ Run eval suite</button>
+        </div>
+        <div class="grid metrics" style="margin-bottom:18px">
+          <div class="card metric"><div class="k">92%</div><div class="l">Task completion rate</div><div class="d up">11 / 12 scenarios</div></div>
+          <div class="card metric"><div class="k">100%</div><div class="l">A2A message reliability</div><div class="d muted">48 / 48 handoffs</div></div>
+          <div class="card metric"><div class="k">3.1k</div><div class="l">Avg tokens / scenario</div><div class="d muted">$0.05 avg</div></div>
+          <div class="card metric"><div class="k">0:54</div><div class="l">Suite runtime</div><div class="d muted">last run 22:41</div></div>
+        </div>
+        <div class="twocol">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Scenario</th><th>Workflow</th><th>Expected</th><th>Result</th><th>Score</th></tr></thead>
+              <tbody>
+                <tr><td>Clean transfer under cap</td><td>Cross-Border Payout</td><td>completes, no gate</td><td>completed</td><td><span class="pill ok"><span class="dot"></span>pass</span></td></tr>
+                <tr><td>Sanctioned recipient</td><td>Cross-Border Payout</td><td>reject → loop to Intake</td><td>rejected + looped</td><td><span class="pill ok"><span class="dot"></span>pass</span></td></tr>
+                <tr><td>Over-cap transfer ($8.4k)</td><td>Cross-Border Payout</td><td>hits approval gate</td><td>gate opened</td><td><span class="pill ok"><span class="dot"></span>pass</span></td></tr>
+                <tr><td>Missing recipient info</td><td>Cross-Border Payout</td><td>reject → loop</td><td>looped</td><td><span class="pill ok"><span class="dot"></span>pass</span></td></tr>
+                <tr><td>FX math within tolerance</td><td>Cross-Border Payout</td><td>amt = rate×amt − fee ±0.5%</td><td>within 0.1%</td><td><span class="pill ok"><span class="dot"></span>pass</span></td></tr>
+                <tr><td>Unpaid invoice timeout</td><td>Cross-Border Payout</td><td>refund + notify</td><td>refunded</td><td><span class="pill ok"><span class="dot"></span>pass</span></td></tr>
+                <tr><td>Blocked corridor (US→IR)</td><td>Cross-Border Payout</td><td>blocked by guardrail</td><td>blocked</td><td><span class="pill ok"><span class="dot"></span>pass</span></td></tr>
+                <tr><td>Reviewer rejects bad code</td><td>Dev Pipeline</td><td>loop back to Coder</td><td>looped (2×)</td><td><span class="pill ok"><span class="dot"></span>pass</span></td></tr>
+                <tr><td>Reviewer approves good code</td><td>Dev Pipeline</td><td>deploy</td><td>deployed</td><td><span class="pill ok"><span class="dot"></span>pass</span></td></tr>
+                <tr><td>Ambiguous amount ("a few hundred")</td><td>Cross-Border Payout</td><td>ask to clarify</td><td>guessed $300</td><td><span class="pill fail"><span class="dot"></span>fail</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="card">
+            <div class="between" style="margin-bottom:6px"><h3>Experiment: compliance threshold</h3><span class="pill tag">A/B</span></div>
+            <p class="small faint" style="margin-top:0">Same scenario set, two configs. Yuno's A/B-routing experimentation, applied to agents.</p>
+            <table style="margin-top:6px">
+              <thead><tr><th>Metric</th><th>A · $5k cap</th><th>B · $10k cap</th></tr></thead>
+              <tbody>
+                <tr><td>Completion rate</td><td>92%</td><td><b>92%</b></td></tr>
+                <tr><td>Approval gate hits</td><td>4</td><td><b>1</b></td></tr>
+                <tr><td>False blocks</td><td><b>0</b></td><td>0</td></tr>
+                <tr><td>Avg time to complete</td><td>1m 02s</td><td><b>0m 38s</b></td></tr>
+              </tbody>
+            </table>
+            <p class="small muted" style="margin-top:10px">B clears more transfers without review at no extra false-blocks — but raises payout risk. The point is you <b>measure</b> the tradeoff instead of guessing.</p>
+            <button class="btn ghost sm" style="margin-top:6px">Promote config B</button>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  // --- simple show/hide router ---
+  const crumbs = {dashboard:"Dashboard",agents:"Agents",editor:"Agents / Editor",workflows:"Workflows",
+    builder:"Workflows / Builder",runs:"Runs",runview:"Runs / #R-2291",channels:"Channels",evals:"Evaluations"};
+  function go(route){
+    document.querySelectorAll('section.screen').forEach(s=>s.classList.toggle('active',s.id===route));
+    document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.route===route));
+    document.getElementById('crumb').textContent = "Workspace / " + (crumbs[route]||route);
+    window.scrollTo({top:0,behavior:'instant'});
+  }
+  document.querySelectorAll('.nav-item').forEach(n=>n.addEventListener('click',()=>go(n.dataset.route)));
+  document.querySelectorAll('[data-go]').forEach(el=>el.addEventListener('click',e=>{e.preventDefault();go(el.dataset.go);}));
+
+  // --- agent editor tabs ---
+  document.querySelectorAll('.etab').forEach(t=>t.addEventListener('click',()=>{
+    document.querySelectorAll('.etab').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.epane').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active'); document.getElementById(t.dataset.pane).classList.add('active');
+  }));
+
+  // --- toggles ---
+  document.querySelectorAll('.sw').forEach(s=>s.addEventListener('click',()=>s.classList.toggle('on')));
+
+  // --- approve button demo state ---
+  const ab=document.getElementById('approveBtn');
+  if(ab) ab.addEventListener('click',()=>{ab.textContent='✓ Approved — releasing payout';ab.style.background='var(--y-success)';});
+
+  // --- tiny live-feed tick so the "live" feel is real in the mockup ---
+  const feed=document.getElementById('liveFeed');
+  const ticks=[['Payout','queued — awaiting approval','info'],['FX Quote','quote cached 30m','ok'],
+    ['Compliance','re-screen passed','ok'],['Intake','ack to @maria_ops','info']];
+  let ti=0;
+  setInterval(()=>{ if(!feed||!document.getElementById('dashboard').classList.contains('active'))return;
+    const [a,m,l]=ticks[ti%ticks.length]; ti++;
+    const now=new Date(); const hh=String(now.getHours()).padStart(2,'0'),mm=String(now.getMinutes()).padStart(2,'0'),ss=String(now.getSeconds()).padStart(2,'0');
+    const div=document.createElement('div'); div.className='ev';
+    div.innerHTML='<span class="t">'+hh+':'+mm+':'+ss+'</span><span class="lvl '+l+'"></span><div><b>'+a+'</b> '+m+'</div>';
+    feed.prepend(div); while(feed.children.length>9) feed.removeChild(feed.lastChild);
+  },3500);
+</script>
+</body>
+</html>
