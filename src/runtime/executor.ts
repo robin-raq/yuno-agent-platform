@@ -25,21 +25,25 @@ export function estimateTokens(input: string, output: string): number {
   return Math.ceil((input.length + output.length) / 4);
 }
 
-/** Scoped MCP endpoint Goose connects to for this agent's permitted tools (loopback only). */
-function mcpUrlFor(agentId: string): string {
-  return `${config.mcpBaseUrl}/mcp/${encodeURIComponent(agentId)}`;
+/**
+ * Scoped MCP endpoint Goose connects to for this agent's permitted tools (loopback only).
+ * Carries the run id so tool calls can be correlated back to the run trail.
+ */
+export function toolEndpoint(agentId: string, runId?: string): string {
+  const base = `${config.mcpBaseUrl}/mcp/${encodeURIComponent(agentId)}`;
+  return runId ? `${base}?runId=${encodeURIComponent(runId)}` : base;
 }
 
 /** Production node executor: runs each node's agent through Goose, constrained to routable signals. */
 export function makeGooseExecutor(agents: AgentsRepo): NodeExecutor {
-  return async ({ node, message, availableSignals }) => {
+  return async ({ node, message, availableSignals, runId }) => {
     const agent = agents.get(node.agentId);
     const allowed: Signal[] = availableSignals.length ? availableSignals : ['complete'];
     const decisionInstruction = `End your reply with a line exactly: "DECISION: <${allowed.join('|')}>". Choose only from those options.`;
 
     // Tools are discovered by Goose from the scoped MCP server's tools/list — no need to
     // list them in the prompt. Only attach the extension when the agent actually has tools.
-    const extensions = agent?.tools?.length ? [mcpUrlFor(node.agentId)] : [];
+    const extensions = agent?.tools?.length ? [toolEndpoint(node.agentId, runId)] : [];
 
     const systemPrompt = [agent?.systemPrompt ?? 'You are a helpful autonomous agent.', decisionInstruction]
       .filter(Boolean)

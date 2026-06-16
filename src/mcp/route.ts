@@ -2,16 +2,21 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import type { AgentsRepo } from '../db/agents';
+import type { RunsRepo } from '../db/runs';
 import type { ToolContext, ToolDef, ToolRegistry } from '../tools';
 import { isActionBlocked } from '../tools/guardrails';
 
 interface McpDeps {
   agents: AgentsRepo;
   registry: ToolRegistry;
+  runs: RunsRepo;
 }
 
+/** Invoked after every tool call so the route can record it in the run trail. */
+type ToolCallSink = (toolName: string, resultText: string, isError: boolean) => void;
+
 /** Build a fresh MCP server exposing only the given tools (per-request, stateless). */
-function buildMcpServer(tools: ToolDef[], ctx: ToolContext): McpServer {
+function buildMcpServer(tools: ToolDef[], ctx: ToolContext, onToolCall: ToolCallSink): McpServer {
   const server = new McpServer({ name: 'yuno-tools', version: '1.0.0' });
   for (const tool of tools) {
     server.registerTool(
@@ -20,18 +25,20 @@ function buildMcpServer(tools: ToolDef[], ctx: ToolContext): McpServer {
       async (args: Record<string, unknown>) => {
         // Guardrail denylist — enforced before the handler runs, so a blocked action never executes.
         if (isActionBlocked(tool.name, ctx.guardrails)) {
-          const blocked = { status: 'blocked', reason: `${tool.name} is blocked by this agent's guardrails` };
-          return { content: [{ type: 'text' as const, text: JSON.stringify(blocked) }], isError: true };
+          const text = JSON.stringify({ status: 'blocked', reason: `${tool.name} is blocked by this agent's guardrails` });
+          onToolCall(tool.name, text, true);
+          return { content: [{ type: 'text' as const, text }], isError: true };
         }
         try {
           const result = await tool.handler(args, ctx);
-          return { content: [{ type: 'text' as const, text: JSON.stringify(result) }] };
+          const text = JSON.stringify(result);
+          onToolCall(tool.name, text, false);
+          return { content: [{ type: 'text' as const, text }] };
         } catch (e) {
           const message = e instanceof Error ? e.message : String(e);
-          return {
-            content: [{ type: 'text' as const, text: JSON.stringify({ error: message }) }],
-            isError: true,
-          };
+          const text = JSON.stringify({ error: message });
+          onToolCall(tool.name, text, true);
+          return { content: [{ type: 'text' as const, text }], isError: true };
         }
       },
     );
@@ -62,7 +69,22 @@ export function registerMcpRoutes(app: FastifyInstance, deps: McpDeps): void {
       runId: request.query.runId,
       guardrails: agent.guardrails,
     };
-    const server = buildMcpServer(tools, ctx);
+    // Record each tool call against the run so Run View shows real tool usage.
+    // Observability must never break a tool call, so persistence failures are swallowed.
+    const onToolCall: ToolCallSink = (toolName, resultText, isError) => {
+      if (!ctx.runId) return;
+      try {
+        deps.runs.addEvent({
+          runId: ctx.runId,
+          level: isError ? 'warn' : 'info',
+          type: 'tool_call',
+          message: `${toolName} → ${resultText.slice(0, 200)}`,
+        });
+      } catch {
+        /* event logging is best-effort; never fail the tool call on a persistence error */
+      }
+    };
+    const server = buildMcpServer(tools, ctx, onToolCall);
     const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
     reply.raw.on('close', () => void transport.close());
 

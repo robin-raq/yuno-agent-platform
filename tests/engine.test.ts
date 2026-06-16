@@ -83,4 +83,17 @@ describe('executeWorkflow', () => {
     expect(messages).toHaveLength(2);
     expect(messages[0]).toMatchObject({ fromNodeId: 'intake', toNodeId: 'comp' });
   });
+
+  it('threads the run id from options through to the executor', async () => {
+    const seen: Array<string | undefined> = [];
+    const exec: NodeExecutor = async ({ node, runId }) => {
+      seen.push(runId);
+      return node.id === 'comp'
+        ? { signal: 'approve', output: 'ok', tokens: 1 }
+        : { signal: 'complete', output: node.id, tokens: 1 };
+    };
+    await executeWorkflow(wf(), 'go', exec, { runId: 'run-123' });
+    expect(seen).toContain('run-123');
+    expect(seen.every((r) => r === 'run-123')).toBe(true);
+  });
 });

@@ -35,6 +35,6 @@ export function buildServer(db: DB = getDb(), deps: ServerDeps = {}): FastifyIns
   registerWorkflows(app, workflows);
   registerRuns(app, runs, runService);
   registerTools(app, registry);
-  registerMcpRoutes(app, { agents, registry });
+  registerMcpRoutes(app, { agents, registry, runs });
   return app;
 }

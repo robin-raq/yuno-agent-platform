@@ -107,6 +107,7 @@ describe('runs API (inject)', () => {
 
     const detail = await app.inject({ method: 'GET', url: `/api/runs/${started.json().id}` });
     expect(detail.json().steps).toHaveLength(3);
+    expect(detail.json().events.some((e: { type: string }) => e.type === 'run_done')).toBe(true);
     await app.close();
   });
 });

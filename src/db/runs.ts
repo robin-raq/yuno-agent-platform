@@ -200,6 +200,11 @@ export function makeRunsRepo(db: DB) {
       const rows = db.prepare('SELECT * FROM events ORDER BY created_at DESC LIMIT ?').all(limit) as EventRow[];
       return rows.map(toEvent);
     },
+
+    listEvents(runId: string): EventLog[] {
+      const rows = db.prepare('SELECT * FROM events WHERE run_id = ? ORDER BY created_at').all(runId) as EventRow[];
+      return rows.map(toEvent);
+    },
   };
 }
 

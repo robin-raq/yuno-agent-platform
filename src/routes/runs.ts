@@ -19,6 +19,7 @@ export function registerRuns(app: FastifyInstance, runs: RunsRepo, runService: R
       ...run,
       steps: runs.listSteps(id),
       messages: runs.listMessages(id),
+      events: runs.listEvents(id),
     };
   });
 

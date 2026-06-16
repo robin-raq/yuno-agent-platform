@@ -16,6 +16,8 @@ export interface ExecInput {
   visitIndex: number;
   /** Signals that are actually routable from this node — the executor constrains the LLM to these. */
   availableSignals: Signal[];
+  /** The owning run id, threaded through so tool calls can be correlated back to the run. */
+  runId?: string;
 }
 
 /** The runtime boundary: turn a node + inbound message into an outcome. Injected (Goose in prod, fake in tests). */
@@ -46,6 +48,8 @@ export interface EngineOptions {
   defaultMaxLoops?: number;
   /** Hard backstop on total node executions. */
   stepBudget?: number;
+  /** Owning run id — passed through to each executor call for tool-call correlation. */
+  runId?: string;
 }
 
 export interface RunResult {
@@ -116,6 +120,7 @@ export async function executeWorkflow(
       message,
       visitIndex: visitIndex++,
       availableSignals: signalsFor(wf, current.id),
+      runId: opts.runId,
     });
     totalTokens += outcome.tokens;
     steps.push({

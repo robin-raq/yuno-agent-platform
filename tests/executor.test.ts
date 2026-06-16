@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { estimateTokens, parseSignal, stripDecision } from '../src/runtime/executor';
+import { estimateTokens, parseSignal, stripDecision, toolEndpoint } from '../src/runtime/executor';
 
 describe('parseSignal', () => {
   it('reads the DECISION line case-insensitively', () => {
@@ -23,5 +23,12 @@ describe('estimateTokens', () => {
   it('approximates chars/4 and is non-negative', () => {
     expect(estimateTokens('abcd', 'efgh')).toBe(2);
     expect(estimateTokens('', '')).toBe(0);
+  });
+});
+
+describe('toolEndpoint', () => {
+  it('scopes the URL to the agent and appends the run id for correlation', () => {
+    expect(toolEndpoint('a1')).toMatch(/\/mcp\/a1$/);
+    expect(toolEndpoint('a1', 'run-9')).toMatch(/\/mcp\/a1\?runId=run-9$/);
   });
 });

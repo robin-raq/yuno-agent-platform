@@ -72,7 +72,7 @@ export function makeRunService({ workflows, runs, executor }: RunServiceDeps) {
         }
       };
 
-      const result = await executeWorkflow(wf, initialMessage, executor, { emit });
+      const result = await executeWorkflow(wf, initialMessage, executor, { emit, runId: run.id });
       runs.updateRun(run.id, {
         status: result.status,
         totalTokens: result.totalTokens,

@@ -37,7 +37,7 @@ const tools = defaultTools().map((t) => ({
 const registry = makeToolRegistry(tools);
 
 const app = Fastify({ logger: false });
-registerMcpRoutes(app, { agents, registry });
+registerMcpRoutes(app, { agents, registry, runs });
 await app.listen({ port: config.port, host: '127.0.0.1' });
 console.log(`MCP route listening; Goose will reach ${config.mcpBaseUrl}/mcp/<agentId>\n`);
 
@@ -60,6 +60,9 @@ async function runScenario(label: string, wfId: string, message: string) {
   console.log(`\n[${label}] status=${run?.status} tokens(real)=${run?.totalTokens}`);
   for (const s of runs.listSteps(run!.id)) {
     console.log(`  STEP ${s.nodeId} [${s.signal}] tokens=${s.tokens} → ${s.output.replace(/\s+/g, ' ').slice(0, 150)}`);
+  }
+  for (const e of runs.listEvents(run!.id).filter((ev) => ev.type === 'tool_call')) {
+    console.log(`  EVENT tool_call [${e.level}] ${e.message.replace(/\s+/g, ' ').slice(0, 140)}`);
   }
   return run;
 }
@@ -113,12 +116,17 @@ const wf2 = workflows.create({
   edges: [],
 });
 
-await runScenario('sanctions', wf1.id, 'Send $400 from Acme to Viktor Petrov in Russia.');
-await runScenario('payout', wf2.id, 'Compliance has APPROVED this transfer. Disburse exactly $8000 USD to Rodrigo Solano in Mexico by calling initiate_payout.');
+const run1 = await runScenario('sanctions', wf1.id, 'Send $400 from Acme to Viktor Petrov in Russia.');
+const run2 = await runScenario('payout', wf2.id, 'Compliance has APPROVED this transfer. Disburse exactly $8000 USD to Rodrigo Solano in Mexico by calling initiate_payout.');
+
+const toolEvents = [run1, run2]
+  .flatMap((r) => (r ? runs.listEvents(r.id) : []))
+  .filter((e) => e.type === 'tool_call');
 
 console.log('\n=== tool invocations (hard proof) ===');
 console.log(`  screen_sanctions: ${calls.screen_sanctions ?? 0} ${calls.screen_sanctions ? '✅' : '❌'}`);
 console.log(`  initiate_payout:  ${calls.initiate_payout ?? 0} ${calls.initiate_payout ? '✅' : '❌'}`);
+console.log(`  tool_call events persisted to run trail: ${toolEvents.length} ${toolEvents.length ? '✅' : '❌'}`);
 
 await app.close();
-process.exit(calls.screen_sanctions && calls.initiate_payout ? 0 : 1);
+process.exit(calls.screen_sanctions && calls.initiate_payout && toolEvents.length ? 0 : 1);
