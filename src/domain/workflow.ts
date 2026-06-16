@@ -61,6 +61,18 @@ export interface RunStep {
   finishedAt?: ISO;
 }
 
+export type EventLevel = 'info' | 'ok' | 'warn' | 'error' | 'tool';
+
+/** Human-readable monitoring feed entry. */
+export interface EventLog {
+  id: ID;
+  runId?: ID;
+  level: EventLevel;
+  type: string;
+  message: string;
+  createdAt: ISO;
+}
+
 export type MessageDirection = 'in' | 'out' | 'a2a';
 
 /** The persisted conversation trail — both inter-agent (a2a) and external-channel messages. */

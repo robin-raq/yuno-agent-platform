@@ -2,13 +2,33 @@ import Fastify, { type FastifyInstance } from 'fastify';
 import type { DB } from './db/db';
 import { getDb } from './db/db';
 import { makeAgentsRepo } from './db/agents';
+import { makeWorkflowsRepo } from './db/workflows';
+import { makeRunsRepo } from './db/runs';
+import { makeGooseExecutor } from './runtime/executor';
+import { makeRunService } from './services/run-service';
+import type { NodeExecutor } from './engine/engine';
 import { registerHealth } from './routes/health';
 import { registerAgents } from './routes/agents';
+import { registerWorkflows } from './routes/workflows';
+import { registerRuns } from './routes/runs';
 
-/** Build the Fastify app. Accepts a DB so tests can pass an in-memory database. */
-export function buildServer(db: DB = getDb()): FastifyInstance {
+export interface ServerDeps {
+  /** Inject a fake executor in tests; defaults to the real Goose-backed one. */
+  executor?: NodeExecutor;
+}
+
+/** Build the Fastify app. Accepts a DB (tests pass `:memory:`) and optional deps. */
+export function buildServer(db: DB = getDb(), deps: ServerDeps = {}): FastifyInstance {
+  const agents = makeAgentsRepo(db);
+  const workflows = makeWorkflowsRepo(db);
+  const runs = makeRunsRepo(db);
+  const executor = deps.executor ?? makeGooseExecutor(agents);
+  const runService = makeRunService({ workflows, runs, executor });
+
   const app = Fastify({ logger: false });
   registerHealth(app);
-  registerAgents(app, makeAgentsRepo(db));
+  registerAgents(app, agents);
+  registerWorkflows(app, workflows);
+  registerRuns(app, runs, runService);
   return app;
 }
