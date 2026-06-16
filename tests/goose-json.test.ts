@@ -7,9 +7,16 @@ describe('buildGooseArgs', () => {
     expect(args).toEqual(['run', '--no-session', '--max-turns', '6', '-t', 'hi']);
   });
 
-  it('appends JSON output flags when requested', () => {
-    const args = buildGooseArgs({ text: 'do it', systemPrompt: 'be helpful', jsonOutput: true });
+  it('attaches MCP extensions and JSON output when requested', () => {
+    const args = buildGooseArgs({
+      text: 'do it',
+      systemPrompt: 'be helpful',
+      extensions: ['http://127.0.0.1:8080/mcp/a1'],
+      jsonOutput: true,
+    });
     expect(args).toContain('--system');
+    expect(args).toContain('--with-streamable-http-extension');
+    expect(args).toContain('http://127.0.0.1:8080/mcp/a1');
     expect(args.slice(-3)).toEqual(['--output-format', 'json', '--quiet']);
   });
 });

@@ -24,6 +24,8 @@ export interface GooseTask {
   text: string;
   model?: string;
   maxTurns?: number;
+  /** Streamable-HTTP MCP server URLs the agent may call tools from (loopback only). */
+  extensions?: string[];
   /** When true, request structured JSON output so real token usage is captured. */
   jsonOutput?: boolean;
 }
@@ -44,6 +46,7 @@ export function stripBanner(raw: string): string {
 export function buildGooseArgs(task: GooseTask): string[] {
   const args = ['run', '--no-session', '--max-turns', String(task.maxTurns ?? 6), '-t', task.text];
   if (task.systemPrompt) args.push('--system', task.systemPrompt);
+  for (const url of task.extensions ?? []) args.push('--with-streamable-http-extension', url);
   if (task.jsonOutput) args.push('--output-format', 'json', '--quiet');
   return args;
 }

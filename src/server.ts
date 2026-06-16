@@ -7,6 +7,8 @@ import { makeRunsRepo } from './db/runs';
 import { makeGooseExecutor } from './runtime/executor';
 import { makeRunService } from './services/run-service';
 import type { NodeExecutor } from './engine/engine';
+import { makeDefaultRegistry } from './tools';
+import { registerMcpRoutes } from './mcp/route';
 import { registerHealth } from './routes/health';
 import { registerAgents } from './routes/agents';
 import { registerWorkflows } from './routes/workflows';
@@ -24,11 +26,13 @@ export function buildServer(db: DB = getDb(), deps: ServerDeps = {}): FastifyIns
   const runs = makeRunsRepo(db);
   const executor = deps.executor ?? makeGooseExecutor(agents);
   const runService = makeRunService({ workflows, runs, executor });
+  const registry = makeDefaultRegistry();
 
   const app = Fastify({ logger: false });
   registerHealth(app);
   registerAgents(app, agents);
   registerWorkflows(app, workflows);
   registerRuns(app, runs, runService);
+  registerMcpRoutes(app, { agents, registry });
   return app;
 }

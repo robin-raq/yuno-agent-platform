@@ -1,5 +1,6 @@
 import type { AgentsRepo } from '../db/agents';
 import type { NodeExecutor, Signal } from '../engine/engine';
+import { config } from '../config';
 import { runGooseTask } from './goose';
 
 const DECISION_RE = /DECISION:\s*(complete|approve|reject)/i;
@@ -24,6 +25,11 @@ export function estimateTokens(input: string, output: string): number {
   return Math.ceil((input.length + output.length) / 4);
 }
 
+/** Scoped MCP endpoint Goose connects to for this agent's permitted tools (loopback only). */
+function mcpUrlFor(agentId: string): string {
+  return `${config.mcpBaseUrl}/mcp/${encodeURIComponent(agentId)}`;
+}
+
 /** Production node executor: runs each node's agent through Goose, constrained to routable signals. */
 export function makeGooseExecutor(agents: AgentsRepo): NodeExecutor {
   return async ({ node, message, availableSignals }) => {
@@ -31,15 +37,21 @@ export function makeGooseExecutor(agents: AgentsRepo): NodeExecutor {
     const allowed: Signal[] = availableSignals.length ? availableSignals : ['complete'];
     const decisionInstruction = `End your reply with a line exactly: "DECISION: <${allowed.join('|')}>". Choose only from those options.`;
 
-    const systemPrompt = [
-      agent?.systemPrompt ?? 'You are a helpful autonomous agent.',
-      agent?.tools?.length ? `Available tools: ${agent.tools.join(', ')}.` : '',
-      decisionInstruction,
-    ]
+    // Tools are discovered by Goose from the scoped MCP server's tools/list — no need to
+    // list them in the prompt. Only attach the extension when the agent actually has tools.
+    const extensions = agent?.tools?.length ? [mcpUrlFor(node.agentId)] : [];
+
+    const systemPrompt = [agent?.systemPrompt ?? 'You are a helpful autonomous agent.', decisionInstruction]
       .filter(Boolean)
       .join('\n');
 
-    const res = await runGooseTask({ systemPrompt, text: message, model: agent?.model, jsonOutput: true });
+    const res = await runGooseTask({
+      systemPrompt,
+      text: message,
+      model: agent?.model,
+      extensions,
+      jsonOutput: true,
+    });
     const raw = res.ok ? res.output : res.error ?? 'agent error';
 
     // Clamp to a routable signal — the LLM can't be trusted to stay in-set.
