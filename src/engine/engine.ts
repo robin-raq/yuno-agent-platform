@@ -14,6 +14,8 @@ export interface ExecInput {
   message: string;
   /** 0-based count of nodes executed so far — lets a fake/real executor vary by visit. */
   visitIndex: number;
+  /** Signals that are actually routable from this node — the executor constrains the LLM to these. */
+  availableSignals: Signal[];
 }
 
 /** The runtime boundary: turn a node + inbound message into an outcome. Injected (Goose in prod, fake in tests). */
@@ -56,6 +58,18 @@ export interface RunResult {
 const conditionFor = (s: Signal): EdgeCondition =>
   s === 'approve' ? 'on_approve' : s === 'reject' ? 'on_reject' : 'on_complete';
 
+const SIGNAL_BY_CONDITION: Record<EdgeCondition, Signal> = {
+  on_complete: 'complete',
+  on_approve: 'approve',
+  on_reject: 'reject',
+};
+
+/** Signals that can actually route out of a node, derived from its outgoing edges. */
+export function signalsFor(wf: Workflow, nodeId: string): Signal[] {
+  const conditions = new Set(wf.edges.filter((e) => e.from === nodeId).map((e) => e.condition));
+  return [...conditions].map((c) => SIGNAL_BY_CONDITION[c]);
+}
+
 /** Resolve the start node — prefer the explicit entry, then a node with no incoming edge, then the first. */
 export function findEntryNode(wf: Workflow): WorkflowNode | undefined {
   const explicit = wf.nodes.find((n) => n.id === wf.entryNodeId);
@@ -97,7 +111,12 @@ export async function executeWorkflow(
     if (steps.length >= stepBudget) return finish('failed', 'step budget exceeded');
 
     emit({ type: 'step_start', nodeId: current.id, agentId: current.agentId, input: message });
-    const outcome = await exec({ node: current, message, visitIndex: visitIndex++ });
+    const outcome = await exec({
+      node: current,
+      message,
+      visitIndex: visitIndex++,
+      availableSignals: signalsFor(wf, current.id),
+    });
     totalTokens += outcome.tokens;
     steps.push({
       nodeId: current.id,
@@ -117,7 +136,12 @@ export async function executeWorkflow(
     });
 
     const condition = conditionFor(outcome.signal);
-    const edge = wf.edges.find((e) => e.from === current!.id && e.condition === condition);
+    const outgoing = wf.edges.filter((e) => e.from === current!.id);
+    // Prefer the signalled edge; fall back to on_complete, then a sole outgoing edge.
+    const edge =
+      outgoing.find((e) => e.condition === condition) ??
+      outgoing.find((e) => e.condition === 'on_complete') ??
+      (outgoing.length === 1 ? outgoing[0] : undefined);
     if (!edge) {
       emit({ type: 'no_outgoing_edge', nodeId: current.id, signal: outcome.signal });
       return finish('completed');

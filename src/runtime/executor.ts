@@ -24,14 +24,13 @@ export function estimateTokens(input: string, output: string): number {
   return Math.ceil((input.length + output.length) / 4);
 }
 
-const decisionInstruction =
-  'After acting, end your reply with a line exactly in this form: "DECISION: <complete|approve|reject>". ' +
-  'Use approve/reject when your role is to gate or review; otherwise use complete.';
-
-/** Production node executor: runs each node's agent through Goose. */
+/** Production node executor: runs each node's agent through Goose, constrained to routable signals. */
 export function makeGooseExecutor(agents: AgentsRepo): NodeExecutor {
-  return async ({ node, message }) => {
+  return async ({ node, message, availableSignals }) => {
     const agent = agents.get(node.agentId);
+    const allowed: Signal[] = availableSignals.length ? availableSignals : ['complete'];
+    const decisionInstruction = `End your reply with a line exactly: "DECISION: <${allowed.join('|')}>". Choose only from those options.`;
+
     const systemPrompt = [
       agent?.systemPrompt ?? 'You are a helpful autonomous agent.',
       agent?.tools?.length ? `Available tools: ${agent.tools.join(', ')}.` : '',
@@ -42,10 +41,11 @@ export function makeGooseExecutor(agents: AgentsRepo): NodeExecutor {
 
     const res = await runGooseTask({ systemPrompt, text: message, model: agent?.model });
     const raw = res.ok ? res.output : res.error ?? 'agent error';
-    return {
-      signal: parseSignal(raw),
-      output: stripDecision(raw) || raw,
-      tokens: estimateTokens(message, raw),
-    };
+
+    // Clamp to a routable signal — the LLM can't be trusted to stay in-set.
+    let signal = parseSignal(raw);
+    if (!allowed.includes(signal)) signal = allowed.includes('complete') ? 'complete' : allowed[0];
+
+    return { signal, output: stripDecision(raw) || raw, tokens: estimateTokens(message, raw) };
   };
 }
