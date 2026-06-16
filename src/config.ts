@@ -15,7 +15,9 @@ export const config = {
 
   // Goose runtime / agent LLM provider
   gooseProvider: process.env.GOOSE_PROVIDER ?? 'anthropic',
-  gooseModel: process.env.GOOSE_MODEL ?? 'claude-haiku-4-5-20251001',
+  // Sonnet by default: haiku reliably routes/restates but breaks persona on multi-tool agent
+  // roles (it refuses/confabulates instead of calling tools). Override with GOOSE_MODEL.
+  gooseModel: process.env.GOOSE_MODEL ?? 'claude-sonnet-4-6',
   anthropicApiKey: process.env.ANTHROPIC_API_KEY ?? '',
 
   // Demo narration / optional
