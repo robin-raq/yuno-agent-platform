@@ -16,9 +16,9 @@ export function stripDecision(output: string): string {
 }
 
 /**
- * Rough token estimate (~4 chars/token). Goose's `run --no-session` does not emit
- * usage on stdout, so this is labelled "estimated" in the UI; real usage is a
- * future enhancement via the ACP serve channel.
+ * Fallback token estimate (~4 chars/token), used only when Goose does not return real usage
+ * (e.g. a failed run). Successful runs use the real input/output/total counts from
+ * `goose run --output-format json`.
  */
 export function estimateTokens(input: string, output: string): number {
   return Math.ceil((input.length + output.length) / 4);
@@ -39,13 +39,14 @@ export function makeGooseExecutor(agents: AgentsRepo): NodeExecutor {
       .filter(Boolean)
       .join('\n');
 
-    const res = await runGooseTask({ systemPrompt, text: message, model: agent?.model });
+    const res = await runGooseTask({ systemPrompt, text: message, model: agent?.model, jsonOutput: true });
     const raw = res.ok ? res.output : res.error ?? 'agent error';
 
     // Clamp to a routable signal — the LLM can't be trusted to stay in-set.
     let signal = parseSignal(raw);
     if (!allowed.includes(signal)) signal = allowed.includes('complete') ? 'complete' : allowed[0];
 
-    return { signal, output: stripDecision(raw) || raw, tokens: estimateTokens(message, raw) };
+    const tokens = res.usage?.totalTokens ?? estimateTokens(message, raw);
+    return { signal, output: stripDecision(raw) || raw, tokens };
   };
 }

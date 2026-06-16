@@ -1,11 +1,19 @@
 import { spawn } from 'node:child_process';
 import { config } from '../config';
 
-/** Result of one headless Goose run. `output` is the agent's text with the banner stripped. */
+/** Real token usage parsed from `goose run --output-format json`. */
+export interface GooseUsage {
+  totalTokens: number;
+  inputTokens: number;
+  outputTokens: number;
+}
+
+/** Result of one headless Goose run. `output` is the agent's final text. */
 export interface GooseResult {
   ok: boolean;
   output: string;
   raw: string;
+  usage?: GooseUsage;
   error?: string;
 }
 
@@ -16,13 +24,15 @@ export interface GooseTask {
   text: string;
   model?: string;
   maxTurns?: number;
+  /** When true, request structured JSON output so real token usage is captured. */
+  jsonOutput?: boolean;
 }
 
 const READY_MARKER = 'goose is ready';
 
 /**
  * Goose prints an ASCII banner and a "goose is ready" line before the agent's
- * actual output. Strip everything up to and including that marker.
+ * actual output (text mode only). Strip everything up to and including that marker.
  */
 export function stripBanner(raw: string): string {
   const idx = raw.lastIndexOf(READY_MARKER);
@@ -30,20 +40,56 @@ export function stripBanner(raw: string): string {
   return body.trim();
 }
 
+/** Build the argv for `goose run`. Pure — kept separate so it can be unit-tested without spawning. */
+export function buildGooseArgs(task: GooseTask): string[] {
+  const args = ['run', '--no-session', '--max-turns', String(task.maxTurns ?? 6), '-t', task.text];
+  if (task.systemPrompt) args.push('--system', task.systemPrompt);
+  if (task.jsonOutput) args.push('--output-format', 'json', '--quiet');
+  return args;
+}
+
+export interface GooseJsonParse {
+  text: string;
+  usage?: GooseUsage;
+}
+
+/**
+ * Parse `goose run --output-format json` stdout into the final assistant text + real usage.
+ * Falls back to banner-stripping if the output is not the expected JSON envelope.
+ */
+export function parseGooseJson(raw: string): GooseJsonParse {
+  try {
+    const j = JSON.parse(raw) as {
+      messages?: Array<{ role: string; content?: Array<{ type: string; text?: string }> }>;
+      metadata?: { total_tokens?: number; input_tokens?: number; output_tokens?: number };
+    };
+    const assistants = (j.messages ?? []).filter((m) => m.role === 'assistant');
+    const last = assistants[assistants.length - 1];
+    const text = (last?.content ?? [])
+      .filter((c) => c.type === 'text' && typeof c.text === 'string')
+      .map((c) => c.text)
+      .join('')
+      .trim();
+    const m = j.metadata;
+    const usage: GooseUsage | undefined = m
+      ? {
+          totalTokens: m.total_tokens ?? 0,
+          inputTokens: m.input_tokens ?? 0,
+          outputTokens: m.output_tokens ?? 0,
+        }
+      : undefined;
+    return { text, usage };
+  } catch {
+    return { text: stripBanner(raw) };
+  }
+}
+
 /**
  * Run a single agent task through Goose headlessly (`goose run --no-session`).
  * The provider/model/key are injected via env so nothing is configured globally.
  */
 export function runGooseTask(task: GooseTask): Promise<GooseResult> {
-  const args = [
-    'run',
-    '--no-session',
-    '--max-turns',
-    String(task.maxTurns ?? 6),
-    '-t',
-    task.text,
-  ];
-  if (task.systemPrompt) args.push('--system', task.systemPrompt);
+  const args = buildGooseArgs(task);
 
   return new Promise((resolve) => {
     const child = spawn('goose', args, {
@@ -60,13 +106,18 @@ export function runGooseTask(task: GooseTask): Promise<GooseResult> {
     child.stdout.on('data', (d) => (out += d.toString()));
     child.stderr.on('data', (d) => (err += d.toString()));
     child.on('error', (e) => resolve({ ok: false, output: '', raw: out, error: e.message }));
-    child.on('close', (code) =>
+    child.on('close', (code) => {
+      const ok = code === 0;
+      const { text, usage } = task.jsonOutput
+        ? parseGooseJson(out)
+        : { text: stripBanner(out), usage: undefined };
       resolve({
-        ok: code === 0,
-        output: stripBanner(out),
+        ok,
+        output: text,
         raw: out,
-        error: code === 0 ? undefined : err.trim() || `goose exited ${code}`,
-      }),
-    );
+        usage,
+        error: ok ? undefined : err.trim() || `goose exited ${code}`,
+      });
+    });
   });
 }
