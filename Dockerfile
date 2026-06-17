@@ -22,6 +22,8 @@ RUN npm --prefix web ci
 # App source + web build.
 COPY . .
 RUN npm --prefix web run build
+# Bake the deterministic eval report (free, no LLM) so the live Evaluations screen has data.
+RUN npm run eval:ci || true
 
 ENV NODE_ENV=production
 # Railway injects PORT; the app binds 0.0.0.0:$PORT (MCP stays on loopback). Templates seed on boot.
