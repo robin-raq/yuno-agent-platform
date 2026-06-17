@@ -6,6 +6,8 @@ import { computeMetrics } from '../evals/metrics';
 import { runMock } from '../evals/runner';
 import { scenarios } from '../evals/scenarios';
 import { readReport, toReport, writeReport } from '../evals/report';
+import { parseVerdict } from '../evals/judge';
+import { toolNameFromEvent } from '../evals/live-runner';
 import { createDb } from '../src/db/db';
 import { buildServer } from '../src/server';
 import type { RunOutcome, ScenarioResult } from '../evals/types';
@@ -79,6 +81,23 @@ describe('report persistence', () => {
 
   it('returns null for a missing report', () => {
     expect(readReport(join(tmpdir(), 'does-not-exist-eval.json'))).toBeNull();
+  });
+});
+
+describe('judge.parseVerdict (live layer)', () => {
+  it('reads pass/fail and keeps the reason', () => {
+    expect(parseVerdict('Looks correct.\nVERDICT: pass')).toEqual({ pass: true, reason: 'Looks correct.' });
+    expect(parseVerdict('Missing screening.\nVERDICT: FAIL').pass).toBe(false);
+  });
+  it('defaults to fail when no verdict line is present', () => {
+    expect(parseVerdict('rambling with no verdict').pass).toBe(false);
+  });
+});
+
+describe('toolNameFromEvent (live layer)', () => {
+  it('extracts the tool name from a tool_call event message', () => {
+    expect(toolNameFromEvent('screen_sanctions → {"status":"cleared"}')).toBe('screen_sanctions');
+    expect(toolNameFromEvent('no arrow here')).toBeUndefined();
   });
 });
 

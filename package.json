@@ -14,6 +14,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "eval:ci": "tsx evals/run.ts",
+    "eval": "tsx evals/run.ts --live",
     "verify": "bash scripts/verify.sh"
   },
   "dependencies": {
