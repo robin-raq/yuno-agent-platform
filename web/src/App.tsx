@@ -8,6 +8,7 @@ import { Agents } from './screens/Agents';
 import { AgentEditor } from './screens/AgentEditor';
 import { Workflows } from './screens/Workflows';
 import { Builder } from './screens/Builder';
+import { Evaluations } from './screens/Evaluations';
 import { Placeholder } from './screens/Placeholder';
 
 interface NavItem {
@@ -90,7 +91,8 @@ export function App() {
           {route === 'workflows' && <Workflows nav={nav} />}
           {route === 'builder' && <Builder workflowId={param} nav={nav} />}
           {route === 'runs' && <Runs runId={param} nav={nav} />}
-          {['channels', 'evals'].includes(route) && <Placeholder title={LABEL[route]} />}
+          {route === 'evals' && <Evaluations />}
+          {route === 'channels' && <Placeholder title={LABEL[route]} />}
         </div>
       </div>
     </div>

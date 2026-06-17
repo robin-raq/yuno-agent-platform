@@ -1,4 +1,4 @@
-import type { Agent, AgentInput, EventLog, Health, Run, RunDetail, Tool, Workflow } from './types';
+import type { Agent, AgentInput, EvalReport, EventLog, Health, Run, RunDetail, Tool, Workflow } from './types';
 
 async function get<T>(path: string): Promise<T> {
   const res = await fetch(path);
@@ -15,6 +15,7 @@ export const api = {
   run: (id: string) => get<RunDetail>(`/api/runs/${id}`),
   events: () => get<EventLog[]>('/api/events'),
   tools: () => get<Tool[]>('/api/tools'),
+  evals: () => get<EvalReport>('/api/evals'),
 
   async startRun(workflowId: string, message: string): Promise<Run> {
     const res = await fetch('/api/runs', {

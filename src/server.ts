@@ -14,6 +14,7 @@ import { registerAgents } from './routes/agents';
 import { registerWorkflows } from './routes/workflows';
 import { registerRuns } from './routes/runs';
 import { registerTools } from './routes/tools';
+import { registerEvals } from './routes/evals';
 import { registerWeb } from './routes/web';
 
 export interface ServerDeps {
@@ -36,6 +37,7 @@ export function buildServer(db: DB = getDb(), deps: ServerDeps = {}): FastifyIns
   registerWorkflows(app, workflows);
   registerRuns(app, runs, runService);
   registerTools(app, registry);
+  registerEvals(app);
   registerMcpRoutes(app, { agents, registry, runs });
   registerWeb(app); // serve the built UI when present (no-op otherwise)
   return app;

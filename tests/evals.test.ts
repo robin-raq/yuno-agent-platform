@@ -1,8 +1,13 @@
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { score } from '../evals/scorer';
 import { computeMetrics } from '../evals/metrics';
 import { runMock } from '../evals/runner';
 import { scenarios } from '../evals/scenarios';
+import { readReport, toReport, writeReport } from '../evals/report';
+import { createDb } from '../src/db/db';
+import { buildServer } from '../src/server';
 import type { RunOutcome, ScenarioResult } from '../evals/types';
 
 const outcome = (over: Partial<RunOutcome> = {}): RunOutcome => ({
@@ -58,5 +63,31 @@ describe('golden scenarios (deterministic layer)', () => {
     const results = await Promise.all(scenarios.map(runMock));
     const failed = results.filter((r) => !r.pass);
     expect(failed.map((f) => `${f.id}: ${f.failures.join(', ')}`)).toEqual([]);
+  });
+});
+
+describe('report persistence', () => {
+  it('round-trips a report to disk', () => {
+    const path = join(tmpdir(), `yuno-eval-${Date.now()}.json`);
+    const results: ScenarioResult[] = [
+      { id: 'a', tags: ['cbp'], pass: true, failures: [], outcome: { status: 'completed', visitedNodes: [], finalOutput: '', handoffs: 0, successfulHandoffs: 0 } },
+    ];
+    const report = toReport('deterministic', computeMetrics(results), results, '2026-06-16T00:00:00.000Z');
+    writeReport(report, path);
+    expect(readReport(path)).toEqual(report);
+  });
+
+  it('returns null for a missing report', () => {
+    expect(readReport(join(tmpdir(), 'does-not-exist-eval.json'))).toBeNull();
+  });
+});
+
+describe('GET /api/evals', () => {
+  it('returns a JSON object (report or empty marker)', async () => {
+    const app = buildServer(createDb(':memory:'));
+    const res = await app.inject({ method: 'GET', url: '/api/evals' });
+    expect(res.statusCode).toBe(200);
+    expect(typeof res.json()).toBe('object');
+    await app.close();
   });
 });

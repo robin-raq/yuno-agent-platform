@@ -37,10 +37,17 @@ export interface RunOutcome {
   successfulHandoffs: number;
 }
 
+export interface Verdict {
+  pass: boolean;
+  reason: string;
+}
+
 export interface ScenarioResult {
   id: string;
   tags: string[];
   pass: boolean;
   failures: string[];
   outcome: RunOutcome;
+  /** LLM-judge verdict (live layer only). */
+  verdict?: Verdict;
 }

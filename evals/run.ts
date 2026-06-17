@@ -7,12 +7,15 @@
 import { scenarios } from './scenarios';
 import { runMock } from './runner';
 import { computeMetrics } from './metrics';
+import { toReport, writeReport } from './report';
 import type { ScenarioResult } from './types';
 
 const results: ScenarioResult[] = [];
 for (const s of scenarios) results.push(await runMock(s));
 
 const m = computeMetrics(results);
+// Persist for the Evaluations screen (GET /api/evals). Timestamp here — fine in a plain script.
+writeReport(toReport('deterministic', m, results, new Date().toISOString()));
 
 console.log(`\nYuno eval — deterministic engine layer · ${m.total} golden scenarios\n`);
 for (const r of results) {

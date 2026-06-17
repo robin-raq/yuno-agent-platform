@@ -117,3 +117,17 @@ export interface RunDetail extends Run {
   messages: Message[];
   events: EventLog[];
 }
+
+export interface EvalReport {
+  empty?: boolean;
+  generatedAt: string;
+  layer: 'deterministic' | 'live';
+  metrics: {
+    total: number;
+    passed: number;
+    taskCompletionRate: number;
+    a2aReliability: number;
+    byTag: Record<string, { total: number; passed: number }>;
+  };
+  scenarios: Array<{ id: string; tags: string[]; pass: boolean; failures: string[]; reason?: string }>;
+}
