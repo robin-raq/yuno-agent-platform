@@ -5,14 +5,13 @@
  *          → Payout (initiate_payout, guardrail-gated)
  *   GOOSE_MODEL=claude-haiku-4-5-20251001 npx tsx scripts/template-smoke.ts
  */
-import Fastify from 'fastify';
 import { createDb } from '../src/db/db';
 import { makeAgentsRepo } from '../src/db/agents';
 import { makeWorkflowsRepo } from '../src/db/workflows';
 import { makeRunsRepo } from '../src/db/runs';
 import { seedTemplates } from '../src/db/seed';
 import { makeToolRegistry, defaultTools } from '../src/tools';
-import { registerMcpRoutes } from '../src/mcp/route';
+import { buildMcpApp } from '../src/mcp/server';
 import { makeGooseExecutor } from '../src/runtime/executor';
 import { makeRunService } from '../src/services/run-service';
 import { config } from '../src/config';
@@ -33,9 +32,8 @@ const tools = defaultTools().map((t) => ({
   },
 }));
 
-const app = Fastify({ logger: false });
-registerMcpRoutes(app, { agents, registry: makeToolRegistry(tools), runs });
-await app.listen({ port: config.port, host: '127.0.0.1' });
+const app = buildMcpApp({ agents, registry: makeToolRegistry(tools), runs });
+await app.listen({ port: config.mcpPort, host: '127.0.0.1' });
 console.log(`MCP route listening; running template "Cross-Border Payout" (tpl-cbp)\n`);
 
 const service = makeRunService({ workflows, runs, executor: makeGooseExecutor(agents) });

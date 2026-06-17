@@ -8,7 +8,6 @@ import { makeGooseExecutor } from './runtime/executor';
 import { makeRunService } from './services/run-service';
 import type { NodeExecutor } from './engine/engine';
 import { makeDefaultRegistry } from './tools';
-import { registerMcpRoutes } from './mcp/route';
 import { registerHealth } from './routes/health';
 import { registerAgents } from './routes/agents';
 import { registerWorkflows } from './routes/workflows';
@@ -38,7 +37,8 @@ export function buildServer(db: DB = getDb(), deps: ServerDeps = {}): FastifyIns
   registerRuns(app, runs, runService);
   registerTools(app, registry);
   registerEvals(app);
-  registerMcpRoutes(app, { agents, registry, runs });
+  // NB: the MCP tool routes are NOT on this (public) app — they run on a separate loopback-only
+  // server (see src/mcp/server.ts, started by main.ts) so callable tools aren't publicly reachable.
   registerWeb(app); // serve the built UI when present (no-op otherwise)
   return app;
 }

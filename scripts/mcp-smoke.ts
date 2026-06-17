@@ -8,13 +8,12 @@
  *              threshold; the PLATFORM returns requires_approval over the wire (not the LLM).
  *   GOOSE_MODEL=claude-haiku-4-5-20251001 npx tsx scripts/mcp-smoke.ts
  */
-import Fastify from 'fastify';
 import { createDb } from '../src/db/db';
 import { makeAgentsRepo } from '../src/db/agents';
 import { makeWorkflowsRepo } from '../src/db/workflows';
 import { makeRunsRepo } from '../src/db/runs';
 import { makeToolRegistry, defaultTools } from '../src/tools';
-import { registerMcpRoutes } from '../src/mcp/route';
+import { buildMcpApp } from '../src/mcp/server';
 import { makeGooseExecutor } from '../src/runtime/executor';
 import { makeRunService } from '../src/services/run-service';
 import { defaultGuardrails, defaultInteractionRules } from '../src/domain/types';
@@ -36,9 +35,8 @@ const tools = defaultTools().map((t) => ({
 }));
 const registry = makeToolRegistry(tools);
 
-const app = Fastify({ logger: false });
-registerMcpRoutes(app, { agents, registry, runs });
-await app.listen({ port: config.port, host: '127.0.0.1' });
+const app = buildMcpApp({ agents, registry, runs });
+await app.listen({ port: config.mcpPort, host: '127.0.0.1' });
 console.log(`MCP route listening; Goose will reach ${config.mcpBaseUrl}/mcp/<agentId>\n`);
 
 const mk = (name: string, role: string, systemPrompt: string, toolNames: string[]) =>

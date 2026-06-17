@@ -3,15 +3,19 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const port = Number(process.env.PORT ?? 8080);
+// The MCP tool server runs on its OWN port bound to loopback only — it exposes callable tools
+// (incl. the payout simulator) and must never ride the public bind. Goose (a local subprocess)
+// reaches it at 127.0.0.1; nothing external can.
+const mcpPort = Number(process.env.MCP_PORT ?? 8765);
 
 /** Central runtime config. Secrets come only from the environment (.env, untracked). */
 export const config = {
   port,
+  mcpPort,
   dbPath: process.env.DB_PATH ?? 'data/yuno.db',
 
-  // Base URL Goose subprocesses use to reach our MCP tool server. Loopback only —
-  // the endpoint exposes callable tools and must never be publicly bound.
-  mcpBaseUrl: process.env.MCP_BASE_URL ?? `http://127.0.0.1:${port}`,
+  // Base URL Goose subprocesses use to reach our loopback-only MCP tool server.
+  mcpBaseUrl: process.env.MCP_BASE_URL ?? `http://127.0.0.1:${mcpPort}`,
 
   // Goose runtime / agent LLM provider
   gooseProvider: process.env.GOOSE_PROVIDER ?? 'anthropic',
