@@ -8,6 +8,7 @@ import { Agents } from './screens/Agents';
 import { AgentEditor } from './screens/AgentEditor';
 import { Workflows } from './screens/Workflows';
 import { Builder } from './screens/Builder';
+import { WorkflowEditor } from './screens/WorkflowEditor';
 import { Evaluations } from './screens/Evaluations';
 import { Channels } from './screens/Channels';
 
@@ -89,7 +90,7 @@ export function App() {
           {route === 'agents' && <Agents nav={nav} />}
           {route === 'editor' && <AgentEditor agentId={param} nav={nav} />}
           {route === 'workflows' && <Workflows nav={nav} />}
-          {route === 'builder' && <Builder workflowId={param} nav={nav} />}
+          {route === 'builder' && (param === 'new' ? <WorkflowEditor nav={nav} /> : <Builder workflowId={param} nav={nav} />)}
           {route === 'runs' && <Runs runId={param} nav={nav} />}
           {route === 'evals' && <Evaluations />}
           {route === 'channels' && <Channels />}

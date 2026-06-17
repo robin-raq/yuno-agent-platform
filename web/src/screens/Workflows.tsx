@@ -16,6 +16,7 @@ export function Workflows({ nav }: { nav: Nav }) {
           <h1>Workflows</h1>
           <p>Multi-agent graphs. Each routes on agent signals (complete / approve / reject).</p>
         </div>
+        <button className="btn" onClick={() => nav('builder', 'new')}>+ New workflow</button>
       </div>
 
       <div className="grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>

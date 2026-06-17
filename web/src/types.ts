@@ -87,6 +87,16 @@ export interface Workflow {
   edges: { from: string; to: string; condition: string; maxLoops?: number }[];
 }
 
+/** What the Workflow Builder submits to create a workflow. */
+export interface WorkflowInput {
+  name: string;
+  description: string;
+  isTemplate: boolean;
+  entryNodeId: string;
+  nodes: { id: string; agentId: string; kind?: 'agent' | 'gate' }[];
+  edges: { from: string; to: string; condition: string; maxLoops?: number }[];
+}
+
 export interface RunStep {
   id: string;
   runId: string;
