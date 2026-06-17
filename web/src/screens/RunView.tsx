@@ -6,13 +6,25 @@ import { SignalPill, StatusPill, eventLevelClass, hhmmss, initials, shortId } fr
 export function RunView({ runId, nav }: { runId: string; nav: Nav }) {
   const [run, setRun] = useState<RunDetail | null>(null);
   const [agents, setAgents] = useState<Agent[]>([]);
+  const [busy, setBusy] = useState(false);
 
+  const load = () => api.run(runId).then(setRun).catch(() => setRun(null));
   useEffect(() => {
-    api.run(runId).then(setRun).catch(() => setRun(null));
+    load();
     api.agents().then(setAgents).catch(() => undefined);
   }, [runId]);
 
   const name = (agentId?: string) => agents.find((a) => a.id === agentId)?.name ?? agentId ?? '—';
+
+  const resolve = async (decision: 'approve' | 'reject') => {
+    setBusy(true);
+    try {
+      await api.resolveRun(runId, decision);
+      await load();
+    } finally {
+      setBusy(false);
+    }
+  };
 
   if (!run) return <div className="card empty">Loading run…</div>;
 
@@ -26,6 +38,23 @@ export function RunView({ runId, nav }: { runId: string; nav: Nav }) {
         </div>
         <StatusPill status={run.status} />
       </div>
+
+      {run.status === 'awaiting_approval' && (
+        <div className="card approve-card" style={{ marginBottom: 18 }}>
+          <div className="between">
+            <div>
+              <h3>Awaiting human approval</h3>
+              <p className="muted small" style={{ margin: '4px 0 0' }}>
+                This run paused at a gate before payout. Approve to continue, or reject to decline.
+              </p>
+            </div>
+            <div className="row">
+              <button className="btn" disabled={busy} onClick={() => resolve('approve')}>{busy ? '…' : 'Approve'}</button>
+              <button className="btn danger" disabled={busy} onClick={() => resolve('reject')}>Reject</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="twocol">
         <div className="card">

@@ -74,6 +74,17 @@ const TEMPLATE_AGENTS: SeedAgent[] = [
       guardrails: { approvalThresholdUsd: 5000 },
     },
   },
+  {
+    id: 'cbp-approver',
+    input: {
+      name: 'Approval Gate',
+      role: 'human-approval',
+      systemPrompt: 'Human approval gate — runs pause here for a person to approve or reject before payout.',
+      model,
+      tools: [],
+      channels: ['internal'],
+    },
+  },
   // --- Dev Pipeline (general-engine demo; reasoning only, no tools) ---
   {
     id: 'dev-coder',
@@ -135,6 +146,30 @@ const TEMPLATE_WORKFLOWS: SeedWorkflow[] = [
         { from: 'comp', to: 'fx', condition: 'on_approve' },
         { from: 'comp', to: 'intake', condition: 'on_reject', maxLoops: 2 },
         { from: 'fx', to: 'payout', condition: 'on_complete' },
+      ],
+    },
+  },
+  {
+    id: 'tpl-cbp-approval',
+    input: {
+      name: 'Cross-Border Payout (with approval)',
+      description:
+        'Same as Cross-Border Payout, but a human approval gate pauses the run before payout — approve or reject it from the Run view.',
+      isTemplate: true,
+      entryNodeId: 'intake',
+      nodes: [
+        { id: 'intake', agentId: 'cbp-intake' },
+        { id: 'comp', agentId: 'cbp-compliance' },
+        { id: 'fx', agentId: 'cbp-fx' },
+        { id: 'approval', agentId: 'cbp-approver', kind: 'gate' },
+        { id: 'payout', agentId: 'cbp-payout' },
+      ],
+      edges: [
+        { from: 'intake', to: 'comp', condition: 'on_complete' },
+        { from: 'comp', to: 'fx', condition: 'on_approve' },
+        { from: 'comp', to: 'intake', condition: 'on_reject', maxLoops: 2 },
+        { from: 'fx', to: 'approval', condition: 'on_complete' },
+        { from: 'approval', to: 'payout', condition: 'on_approve' }, // reject = no edge → run ends declined
       ],
     },
   },

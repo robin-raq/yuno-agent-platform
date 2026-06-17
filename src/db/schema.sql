@@ -28,12 +28,14 @@ CREATE TABLE IF NOT EXISTS workflows (
 );
 
 CREATE TABLE IF NOT EXISTS runs (
-  id           TEXT PRIMARY KEY,
-  workflow_id  TEXT NOT NULL,
-  status       TEXT NOT NULL,
-  total_tokens INTEGER NOT NULL DEFAULT 0,
-  started_at   TEXT NOT NULL,
-  finished_at  TEXT
+  id              TEXT PRIMARY KEY,
+  workflow_id     TEXT NOT NULL,
+  status          TEXT NOT NULL,
+  total_tokens    INTEGER NOT NULL DEFAULT 0,
+  started_at      TEXT NOT NULL,
+  finished_at     TEXT,
+  pending_node_id TEXT,  -- when status=awaiting_approval: gate node to resume from
+  pending_message TEXT   -- ...and the message held at that gate
 );
 
 CREATE TABLE IF NOT EXISTS run_steps (

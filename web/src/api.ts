@@ -28,6 +28,12 @@ export const api = {
     return res.json() as Promise<Run>;
   },
 
+  async resolveRun(id: string, decision: 'approve' | 'reject'): Promise<Run> {
+    const res = await fetch(`/api/runs/${id}/${decision}`, { method: 'POST' });
+    if (!res.ok) throw new Error(`${decision} run → ${res.status}`);
+    return res.json() as Promise<Run>;
+  },
+
   agent: (id: string) => get<Agent>(`/api/agents/${id}`),
 
   async saveAgent(input: AgentInput, id?: string): Promise<Agent> {

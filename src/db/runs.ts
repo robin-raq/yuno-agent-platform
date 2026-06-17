@@ -19,6 +19,8 @@ interface RunRow {
   total_tokens: number;
   started_at: string;
   finished_at: string | null;
+  pending_node_id: string | null;
+  pending_message: string | null;
 }
 interface StepRow {
   id: string;
@@ -59,6 +61,8 @@ const toRun = (r: RunRow): Run => ({
   totalTokens: r.total_tokens,
   startedAt: r.started_at,
   finishedAt: r.finished_at ?? undefined,
+  pendingNodeId: r.pending_node_id ?? undefined,
+  pendingMessage: r.pending_message ?? undefined,
 });
 
 const toStep = (r: StepRow): RunStep => ({
@@ -111,13 +115,28 @@ export function makeRunsRepo(db: DB) {
       return run;
     },
 
-    updateRun(id: string, patch: { status?: RunStatus; totalTokens?: number; finishedAt?: string }): void {
+    updateRun(
+      id: string,
+      patch: {
+        status?: RunStatus;
+        totalTokens?: number;
+        finishedAt?: string;
+        pendingNodeId?: string | null; // null clears the pending state (on resume/finish)
+        pendingMessage?: string | null;
+      },
+    ): void {
       const cur = this.getRun(id);
       if (!cur) return;
-      db.prepare('UPDATE runs SET status=?, total_tokens=?, finished_at=? WHERE id=?').run(
+      const pendingNode = patch.pendingNodeId === undefined ? cur.pendingNodeId ?? null : patch.pendingNodeId;
+      const pendingMsg = patch.pendingMessage === undefined ? cur.pendingMessage ?? null : patch.pendingMessage;
+      db.prepare(
+        'UPDATE runs SET status=?, total_tokens=?, finished_at=?, pending_node_id=?, pending_message=? WHERE id=?',
+      ).run(
         patch.status ?? cur.status,
         patch.totalTokens ?? cur.totalTokens,
         patch.finishedAt ?? cur.finishedAt ?? null,
+        pendingNode,
+        pendingMsg,
         id,
       );
     },

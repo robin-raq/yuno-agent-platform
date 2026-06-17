@@ -12,7 +12,7 @@ describe('seedTemplates', () => {
     const agents = makeAgentsRepo(db);
 
     const templates = workflows.list().filter((w) => w.isTemplate);
-    expect(templates.map((t) => t.id).sort()).toEqual(['tpl-cbp', 'tpl-dev']);
+    expect(templates.map((t) => t.id).sort()).toEqual(['tpl-cbp', 'tpl-cbp-approval', 'tpl-dev']);
 
     for (const wf of templates) {
       // Entry node exists in the graph.
@@ -41,7 +41,7 @@ describe('seedTemplates', () => {
     const db = createDb(':memory:');
     seedTemplates(db);
     seedTemplates(db);
-    expect(makeWorkflowsRepo(db).list().filter((w) => w.isTemplate)).toHaveLength(2);
+    expect(makeWorkflowsRepo(db).list().filter((w) => w.isTemplate)).toHaveLength(3);
     const ids = makeAgentsRepo(db).list().map((a) => a.id);
     expect(new Set(ids).size).toBe(ids.length);
   });

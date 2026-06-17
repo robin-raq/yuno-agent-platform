@@ -31,6 +31,19 @@ export function registerRuns(app: FastifyInstance, runs: RunsRepo, runService: R
     return reply.code(201).send(run);
   });
 
+  // Resume a run paused at a human-approval gate.
+  app.post('/api/runs/:id/approve', async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const run = await runService.resumeRun(id, 'approve');
+    return run ? run : reply.code(409).send({ error: 'run is not awaiting approval' });
+  });
+
+  app.post('/api/runs/:id/reject', async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const run = await runService.resumeRun(id, 'reject');
+    return run ? run : reply.code(409).send({ error: 'run is not awaiting approval' });
+  });
+
   // Monitoring feeds (consumed by the dashboard + channels view).
   app.get('/api/events', async () => runs.recentEvents());
   app.get('/api/messages', async () => runs.recentMessages());

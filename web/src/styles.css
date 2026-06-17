@@ -154,5 +154,6 @@ input:focus, textarea:focus, select:focus { outline: 2px solid var(--y-primary-1
   background: #fff; border: 1.5px solid var(--y-border); border-radius: 12px;
   padding: 12px 14px; box-shadow: var(--y-shadow-md);
 }
+.approve-card { border: 1.5px dashed var(--y-warning); background: #fffdf7; }
 .edge { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--y-text-muted); padding: 8px 0 8px 22px; }
 .edge b { color: var(--y-ink); }

@@ -79,6 +79,35 @@ describe('run service', () => {
     expect(await service.startRun('does-not-exist', 'hi')).toBeNull();
   });
 
+  it('pauses at an approval gate and resumes to completion on approve', async () => {
+    const { workflows, runs } = setup();
+    const wf = workflows.create({
+      name: 'gated',
+      description: '',
+      isTemplate: false,
+      entryNodeId: 'n1',
+      nodes: [
+        { id: 'n1', agentId: 'a1' },
+        { id: 'gate', agentId: 'a1', kind: 'gate' },
+        { id: 'n2', agentId: 'a1' },
+      ],
+      edges: [
+        { from: 'n1', to: 'gate', condition: 'on_complete' },
+        { from: 'gate', to: 'n2', condition: 'on_approve' },
+      ],
+    });
+    const exec: NodeExecutor = async ({ node }) => ({ signal: 'complete', output: node.id, tokens: 1 });
+    const service = makeRunService({ workflows, runs, executor: exec });
+
+    const run = await service.startRun(wf.id, 'go');
+    expect(run?.status).toBe('awaiting_approval');
+    expect(run?.pendingNodeId).toBe('gate');
+
+    const resumed = await service.resumeRun(run!.id, 'approve');
+    expect(resumed?.status).toBe('completed');
+    expect(runs.listSteps(run!.id).map((s) => s.nodeId)).toEqual(['n1', 'n2']);
+  });
+
   it('records a capped feedback loop as a failed run', async () => {
     const { workflows, runs, workflow } = setup();
     const executor: NodeExecutor = async ({ node }) =>

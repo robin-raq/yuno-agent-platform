@@ -32,7 +32,7 @@ export interface StepRecord {
   tokens: number;
 }
 
-export type EngineStatus = 'completed' | 'failed';
+export type EngineStatus = 'completed' | 'failed' | 'awaiting_approval';
 
 export type EngineEvent =
   | { type: 'step_start'; nodeId: string; agentId: string; input: string }
@@ -40,6 +40,7 @@ export type EngineEvent =
   | { type: 'message'; fromNodeId: string; toNodeId: string; fromAgentId: string; toAgentId: string; content: string }
   | { type: 'loop_capped'; from: string; to: string; condition: EdgeCondition; limit: number }
   | { type: 'no_outgoing_edge'; nodeId: string; signal: Signal }
+  | { type: 'awaiting_approval'; nodeId: string }
   | { type: 'run_done'; status: EngineStatus; reason?: string };
 
 export interface EngineOptions {
@@ -50,6 +51,9 @@ export interface EngineOptions {
   stepBudget?: number;
   /** Owning run id — passed through to each executor call for tool-call correlation. */
   runId?: string;
+  /** Resume entry point — begin at this node with this message instead of the workflow entry. */
+  startNodeId?: string;
+  startMessage?: string;
 }
 
 export interface RunResult {
@@ -57,6 +61,9 @@ export interface RunResult {
   steps: StepRecord[];
   totalTokens: number;
   reason?: string;
+  /** Set when status is awaiting_approval: the gate node reached and the message held at it. */
+  pendingNodeId?: string;
+  pendingMessage?: string;
 }
 
 const conditionFor = (s: Signal): EdgeCondition =>
@@ -106,13 +113,20 @@ export async function executeWorkflow(
     return { status, steps, totalTokens, reason };
   };
 
-  let current = findEntryNode(wf);
-  if (!current) return finish('failed', 'empty workflow');
-  let message = initialMessage;
+  // Resume support: begin at an explicit node/message (post-gate) instead of the workflow entry.
+  let current = opts.startNodeId ? wf.nodes.find((n) => n.id === opts.startNodeId) : findEntryNode(wf);
+  if (!current) return finish('failed', opts.startNodeId ? `unknown start node "${opts.startNodeId}"` : 'empty workflow');
+  let message = opts.startNodeId ? opts.startMessage ?? initialMessage : initialMessage;
   let visitIndex = 0;
 
   while (current) {
     if (steps.length >= stepBudget) return finish('failed', 'step budget exceeded');
+
+    // Human approval gate: pause the run here without executing, to be resumed by approve/reject.
+    if (current.kind === 'gate') {
+      emit({ type: 'awaiting_approval', nodeId: current.id });
+      return { status: 'awaiting_approval', steps, totalTokens, pendingNodeId: current.id, pendingMessage: message };
+    }
 
     emit({ type: 'step_start', nodeId: current.id, agentId: current.agentId, input: message });
     const outcome = await exec({

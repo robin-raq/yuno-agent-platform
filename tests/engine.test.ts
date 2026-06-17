@@ -84,6 +84,28 @@ describe('executeWorkflow', () => {
     expect(messages[0]).toMatchObject({ fromNodeId: 'intake', toNodeId: 'comp' });
   });
 
+  it('pauses at a gate node without executing it, then resumes past it', async () => {
+    const gated = (): Workflow => ({
+      id: 'g1', name: 'gated', description: '', isTemplate: false, entryNodeId: 'a',
+      nodes: [{ id: 'a', agentId: 'ag' }, { id: 'gate', agentId: 'hum', kind: 'gate' }, { id: 'b', agentId: 'bg' }],
+      edges: [
+        { from: 'a', to: 'gate', condition: 'on_complete' },
+        { from: 'gate', to: 'b', condition: 'on_approve' },
+      ],
+      createdAt: '', updatedAt: '',
+    });
+    const exec: NodeExecutor = async ({ node }) => ({ signal: 'complete', output: `${node.id} done`, tokens: 1 });
+
+    const paused = await executeWorkflow(gated(), 'go', exec);
+    expect(paused.status).toBe('awaiting_approval');
+    expect(paused.pendingNodeId).toBe('gate');
+    expect(paused.steps.map((s) => s.nodeId)).toEqual(['a']); // gate itself not executed
+
+    const resumed = await executeWorkflow(gated(), '', exec, { startNodeId: 'b', startMessage: 'approved' });
+    expect(resumed.status).toBe('completed');
+    expect(resumed.steps.map((s) => s.nodeId)).toEqual(['b']);
+  });
+
   it('threads the run id from options through to the executor', async () => {
     const seen: Array<string | undefined> = [];
     const exec: NodeExecutor = async ({ node, runId }) => {

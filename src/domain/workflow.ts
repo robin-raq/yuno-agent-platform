@@ -45,6 +45,9 @@ export interface Run {
   totalTokens: number;
   startedAt: ISO;
   finishedAt?: ISO;
+  /** When status is awaiting_approval: where to resume and with what message. */
+  pendingNodeId?: string;
+  pendingMessage?: string;
 }
 
 export interface RunStep {
