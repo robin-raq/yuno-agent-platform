@@ -71,3 +71,14 @@ CREATE TABLE IF NOT EXISTS events (
   message    TEXT NOT NULL,
   created_at TEXT NOT NULL
 );
+
+-- User-defined tools (name unique). `params` is a JSON array of arg names; `response` is the
+-- mock result the tool returns (parsed as JSON if possible, else echoed). Built-in tools live
+-- in code; these extend the registry at runtime so agents aren't limited to the built-ins.
+CREATE TABLE IF NOT EXISTS custom_tools (
+  name        TEXT PRIMARY KEY,
+  description TEXT NOT NULL,
+  params      TEXT NOT NULL DEFAULT '[]',
+  response    TEXT NOT NULL DEFAULT '{}',
+  created_at  TEXT NOT NULL
+);

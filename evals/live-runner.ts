@@ -2,8 +2,8 @@ import { createDb } from '../src/db/db';
 import { makeAgentsRepo } from '../src/db/agents';
 import { makeWorkflowsRepo } from '../src/db/workflows';
 import { makeRunsRepo, type RunsRepo } from '../src/db/runs';
+import { makeCustomToolsRepo } from '../src/db/custom-tools';
 import { seedTemplates } from '../src/db/seed';
-import { makeDefaultRegistry } from '../src/tools';
 import { buildMcpApp } from '../src/mcp/server';
 import { makeGooseExecutor } from '../src/runtime/executor';
 import { makeRunService, type RunService } from '../src/services/run-service';
@@ -35,7 +35,7 @@ export async function runLiveSuite(scenarios: Scenario[], opts: LiveOptions = {}
   seedTemplates(db);
   const agents = makeAgentsRepo(db);
   const runs = makeRunsRepo(db);
-  const app = buildMcpApp({ agents, registry: makeDefaultRegistry(), runs });
+  const app = buildMcpApp({ agents, customTools: makeCustomToolsRepo(db), runs });
   await app.listen({ port: config.mcpPort, host: '127.0.0.1' });
   const service = makeRunService({ workflows: makeWorkflowsRepo(db), runs, executor: makeGooseExecutor(agents) });
 

@@ -20,6 +20,28 @@ export function AgentEditor({ agentId, nav }: { agentId?: string; nav: Nav }) {
   const [allTools, setAllTools] = useState<Tool[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showTool, setShowTool] = useState(false);
+  const [nt, setNt] = useState({ name: '', description: '', params: '', response: '{}' });
+  const [toolErr, setToolErr] = useState<string | null>(null);
+
+  const addTool = async () => {
+    if (!nt.name.trim() || !nt.description.trim()) return setToolErr('Name and description are required.');
+    setToolErr(null);
+    try {
+      await api.createTool({
+        name: nt.name.trim(),
+        description: nt.description.trim(),
+        params: nt.params.split(',').map((s) => s.trim()).filter(Boolean),
+        response: nt.response.trim() || '{}',
+      });
+      setAllTools(await api.tools());
+      set('tools', [...form.tools, nt.name.trim()]); // auto-grant the new tool
+      setNt({ name: '', description: '', params: '', response: '{}' });
+      setShowTool(false);
+    } catch (e) {
+      setToolErr((e as Error).message);
+    }
+  };
 
   useEffect(() => {
     api.tools().then(setAllTools).catch(() => undefined);
@@ -110,10 +132,35 @@ export function AgentEditor({ agentId, nav }: { agentId?: string; nav: Nav }) {
                 title={t.description}
                 onClick={() => set('tools', toggle(form.tools, t.name))}
               >
-                {t.name}
+                {t.name}{t.custom ? ' ·custom' : ''}
               </span>
             ))}
+            <span className="chip clickable" style={{ background: 'var(--y-accent)', color: '#41510a' }} onClick={() => setShowTool((s) => !s)}>
+              + custom tool
+            </span>
           </div>
+          {showTool && (
+            <div className="card" style={{ marginTop: 10, boxShadow: 'none', background: 'var(--y-surface-2)' }}>
+              <div className="field" style={{ marginBottom: 10 }}>
+                <label>Tool name (lowercase_with_underscores)</label>
+                <input type="text" value={nt.name} onChange={(e) => setNt({ ...nt, name: e.target.value })} placeholder="get_weather" />
+              </div>
+              <div className="field" style={{ marginBottom: 10 }}>
+                <label>Description (the agent reads this)</label>
+                <input type="text" value={nt.description} onChange={(e) => setNt({ ...nt, description: e.target.value })} placeholder="Get the current weather for a city" />
+              </div>
+              <div className="field" style={{ marginBottom: 10 }}>
+                <label>Params (comma-separated)</label>
+                <input type="text" value={nt.params} onChange={(e) => setNt({ ...nt, params: e.target.value })} placeholder="city" />
+              </div>
+              <div className="field" style={{ marginBottom: 10 }}>
+                <label>Mock response (JSON the tool returns)</label>
+                <input type="text" value={nt.response} onChange={(e) => setNt({ ...nt, response: e.target.value })} placeholder='{"tempC": 21, "sky": "clear"}' />
+              </div>
+              {toolErr && <div className="small" style={{ color: 'var(--y-danger)', marginBottom: 8 }}>{toolErr}</div>}
+              <button className="btn sm" onClick={addTool}>Create tool</button>
+            </div>
+          )}
         </div>
 
         <div className="field">

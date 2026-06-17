@@ -1,4 +1,4 @@
-import type { Agent, AgentInput, EvalReport, EventLog, Health, Message, Run, RunDetail, Tool, Workflow, WorkflowInput } from './types';
+import type { Agent, AgentInput, EvalReport, EventLog, Health, Message, Run, RunDetail, Tool, ToolInput, Workflow, WorkflowInput } from './types';
 
 async function get<T>(path: string): Promise<T> {
   const res = await fetch(path);
@@ -27,6 +27,16 @@ export const api = {
   messages: () => get<Message[]>('/api/messages'),
   tools: () => get<Tool[]>('/api/tools'),
   evals: () => get<EvalReport>('/api/evals'),
+
+  async createTool(input: ToolInput): Promise<Tool> {
+    const res = await fetch('/api/tools', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(input),
+    });
+    if (!res.ok) throw new Error(`create tool → ${res.status}`);
+    return res.json() as Promise<Tool>;
+  },
 
   async startRun(workflowId: string, message: string): Promise<Run> {
     const res = await fetch('/api/runs', {

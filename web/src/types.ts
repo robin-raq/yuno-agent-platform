@@ -70,6 +70,15 @@ export interface Tool {
   name: string;
   description: string;
   params: string[];
+  custom?: boolean;
+}
+
+/** What the Agent Editor submits to define a custom tool. */
+export interface ToolInput {
+  name: string;
+  description: string;
+  params: string[];
+  response: string;
 }
 
 export interface WorkflowNode {

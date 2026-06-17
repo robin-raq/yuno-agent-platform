@@ -3,12 +3,13 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import type { AgentsRepo } from '../db/agents';
 import type { RunsRepo } from '../db/runs';
-import type { ToolContext, ToolDef, ToolRegistry } from '../tools';
+import type { CustomToolsRepo } from '../db/custom-tools';
+import { makeRegistry, type ToolContext, type ToolDef } from '../tools';
 import { isActionBlocked } from '../tools/guardrails';
 
 interface McpDeps {
   agents: AgentsRepo;
-  registry: ToolRegistry;
+  customTools: CustomToolsRepo;
   runs: RunsRepo;
 }
 
@@ -63,7 +64,9 @@ export function registerMcpRoutes(app: FastifyInstance, deps: McpDeps): void {
       return;
     }
 
-    const tools = deps.registry.forAgent(agent.tools);
+    // Resolve the registry per request (built-in + DB custom tools) so newly-created tools are callable.
+    const registry = makeRegistry(deps.customTools.toolDefs());
+    const tools = registry.forAgent(agent.tools);
     const ctx: ToolContext = {
       agentId: agent.id,
       runId: request.query.runId,

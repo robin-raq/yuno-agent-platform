@@ -12,3 +12,6 @@ export function defaultTools(): ToolDef[] {
 
 /** Convenience: a registry populated with the built-in tools. */
 export const makeDefaultRegistry = () => makeToolRegistry(defaultTools());
+
+/** Registry combining built-in tools with runtime custom tool defs (DB-backed). */
+export const makeRegistry = (customDefs: ToolDef[] = []) => makeToolRegistry([...defaultTools(), ...customDefs]);

@@ -4,7 +4,7 @@ import { getDb } from './db/db';
 import { makeAgentsRepo } from './db/agents';
 import { makeWorkflowsRepo } from './db/workflows';
 import { makeRunsRepo } from './db/runs';
-import { makeDefaultRegistry } from './tools';
+import { makeCustomToolsRepo } from './db/custom-tools';
 import { makeGooseExecutor } from './runtime/executor';
 import { makeRunService } from './services/run-service';
 import { startTelegramGateway } from './channels/telegram';
@@ -19,7 +19,7 @@ const runs = makeRunsRepo(db);
 const runService = makeRunService({ workflows: makeWorkflowsRepo(db), runs, executor: makeGooseExecutor(agents) });
 
 const app = buildServer(db);
-const mcp = buildMcpApp({ agents, registry: makeDefaultRegistry(), runs });
+const mcp = buildMcpApp({ agents, customTools: makeCustomToolsRepo(db), runs });
 
 try {
   // MCP tool server: loopback only, so callable tools are reachable by the local Goose

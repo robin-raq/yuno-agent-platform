@@ -1,12 +1,12 @@
 import Fastify, { type FastifyInstance } from 'fastify';
 import type { AgentsRepo } from '../db/agents';
 import type { RunsRepo } from '../db/runs';
-import type { ToolRegistry } from '../tools';
+import type { CustomToolsRepo } from '../db/custom-tools';
 import { registerMcpRoutes } from './route';
 
 export interface McpDeps {
   agents: AgentsRepo;
-  registry: ToolRegistry;
+  customTools: CustomToolsRepo;
   runs: RunsRepo;
 }
 

@@ -10,7 +10,7 @@ import { makeAgentsRepo } from '../src/db/agents';
 import { makeWorkflowsRepo } from '../src/db/workflows';
 import { makeRunsRepo } from '../src/db/runs';
 import { seedTemplates } from '../src/db/seed';
-import { makeToolRegistry, defaultTools } from '../src/tools';
+import { makeCustomToolsRepo } from '../src/db/custom-tools';
 import { buildMcpApp } from '../src/mcp/server';
 import { makeGooseExecutor } from '../src/runtime/executor';
 import { makeRunService } from '../src/services/run-service';
@@ -22,17 +22,7 @@ const agents = makeAgentsRepo(db);
 const workflows = makeWorkflowsRepo(db);
 const runs = makeRunsRepo(db);
 
-// Instrument every tool to prove which ones really fired over the wire.
-const calls: Record<string, number> = {};
-const tools = defaultTools().map((t) => ({
-  ...t,
-  handler: (args: Record<string, unknown>, ctx: { agentId: string; runId?: string }) => {
-    calls[t.name] = (calls[t.name] ?? 0) + 1;
-    return t.handler(args, ctx);
-  },
-}));
-
-const app = buildMcpApp({ agents, registry: makeToolRegistry(tools), runs });
+const app = buildMcpApp({ agents, customTools: makeCustomToolsRepo(db), runs });
 await app.listen({ port: config.mcpPort, host: '127.0.0.1' });
 console.log(`MCP route listening; running template "Cross-Border Payout" (tpl-cbp)\n`);
 
@@ -50,6 +40,12 @@ for (const e of runs.listEvents(run!.id).filter((ev) => ev.type === 'tool_call')
   console.log(`  TOOL [${e.level}] ${e.message.replace(/\s+/g, ' ').slice(0, 130)}`);
 }
 
+// Count tool calls from the persisted tool_call events (hard proof they fired over the wire).
+const calls: Record<string, number> = {};
+for (const e of runs.listEvents(run!.id).filter((ev) => ev.type === 'tool_call')) {
+  const n = e.message.match(/^(\w+)/)?.[1];
+  if (n) calls[n] = (calls[n] ?? 0) + 1;
+}
 const expected = ['screen_sanctions', 'check_limits', 'get_fx_rate', 'quote_fees', 'initiate_payout'];
 console.log('\n=== tool coverage (hard proof) ===');
 for (const name of expected) console.log(`  ${name}: ${calls[name] ?? 0} ${calls[name] ? '✅' : '❌'}`);

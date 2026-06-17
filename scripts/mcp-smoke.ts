@@ -12,7 +12,7 @@ import { createDb } from '../src/db/db';
 import { makeAgentsRepo } from '../src/db/agents';
 import { makeWorkflowsRepo } from '../src/db/workflows';
 import { makeRunsRepo } from '../src/db/runs';
-import { makeToolRegistry, defaultTools } from '../src/tools';
+import { makeCustomToolsRepo } from '../src/db/custom-tools';
 import { buildMcpApp } from '../src/mcp/server';
 import { makeGooseExecutor } from '../src/runtime/executor';
 import { makeRunService } from '../src/services/run-service';
@@ -24,18 +24,7 @@ const agents = makeAgentsRepo(db);
 const workflows = makeWorkflowsRepo(db);
 const runs = makeRunsRepo(db);
 
-// Instrument every tool so we can prove which ones were really invoked over the wire.
-const calls: Record<string, number> = {};
-const tools = defaultTools().map((t) => ({
-  ...t,
-  handler: (args: Record<string, unknown>, ctx: { agentId: string; runId?: string }) => {
-    calls[t.name] = (calls[t.name] ?? 0) + 1;
-    return t.handler(args, ctx);
-  },
-}));
-const registry = makeToolRegistry(tools);
-
-const app = buildMcpApp({ agents, registry, runs });
+const app = buildMcpApp({ agents, customTools: makeCustomToolsRepo(db), runs });
 await app.listen({ port: config.mcpPort, host: '127.0.0.1' });
 console.log(`MCP route listening; Goose will reach ${config.mcpBaseUrl}/mcp/<agentId>\n`);
 
@@ -120,6 +109,13 @@ const run2 = await runScenario('payout', wf2.id, 'Compliance has APPROVED this t
 const toolEvents = [run1, run2]
   .flatMap((r) => (r ? runs.listEvents(r.id) : []))
   .filter((e) => e.type === 'tool_call');
+
+// Count tool calls from the persisted tool_call events (hard proof they fired over the wire).
+const calls: Record<string, number> = {};
+for (const e of toolEvents) {
+  const n = e.message.match(/^(\w+)/)?.[1];
+  if (n) calls[n] = (calls[n] ?? 0) + 1;
+}
 
 console.log('\n=== tool invocations (hard proof) ===');
 console.log(`  screen_sanctions: ${calls.screen_sanctions ?? 0} ${calls.screen_sanctions ? '✅' : '❌'}`);

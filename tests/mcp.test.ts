@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createDb } from '../src/db/db';
 import { makeAgentsRepo } from '../src/db/agents';
 import { makeRunsRepo } from '../src/db/runs';
-import { makeDefaultRegistry } from '../src/tools';
+import { makeCustomToolsRepo } from '../src/db/custom-tools';
 import { buildMcpApp } from '../src/mcp/server';
 import { buildServer } from '../src/server';
 
@@ -11,7 +11,7 @@ import { buildServer } from '../src/server';
 describe('MCP server (loopback-only)', () => {
   const mcpApp = () => {
     const db = createDb(':memory:');
-    return buildMcpApp({ agents: makeAgentsRepo(db), registry: makeDefaultRegistry(), runs: makeRunsRepo(db) });
+    return buildMcpApp({ agents: makeAgentsRepo(db), customTools: makeCustomToolsRepo(db), runs: makeRunsRepo(db) });
   };
 
   it('returns 404 for an unknown agent', async () => {
