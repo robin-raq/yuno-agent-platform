@@ -135,6 +135,10 @@ input[type="text"], input[type="number"], select, textarea {
 textarea { min-height: 80px; resize: vertical; }
 input:focus, textarea:focus, select:focus { outline: 2px solid var(--y-primary-100); border-color: var(--y-primary); }
 .btn:disabled { opacity: 0.6; cursor: progress; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { font-size: 13px; padding: 5px 11px; border-radius: var(--y-radius-pill); background: var(--y-primary-100); color: var(--y-primary); user-select: none; }
+.chip.off { background: var(--y-surface-2); color: var(--y-text-muted); }
+.chip.lime { background: var(--y-accent); color: #41510a; }
 
 /* message / step trail */
 .trail { display: flex; flex-direction: column; gap: 14px; max-height: 520px; overflow: auto; padding-right: 6px; }
@@ -144,3 +148,11 @@ input:focus, textarea:focus, select:focus { outline: 2px solid var(--y-primary-1
 .msg .meta b { color: var(--y-ink); font-weight: 600; }
 .arr { color: var(--y-primary); }
 .clickable { cursor: pointer; }
+
+/* workflow builder graph */
+.gnode-card {
+  background: #fff; border: 1.5px solid var(--y-border); border-radius: 12px;
+  padding: 12px 14px; box-shadow: var(--y-shadow-md);
+}
+.edge { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--y-text-muted); padding: 8px 0 8px 22px; }
+.edge b { color: var(--y-ink); }

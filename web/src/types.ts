@@ -18,13 +18,34 @@ export interface Health {
   capabilities: { goose: boolean; telegram: boolean; payments: boolean };
 }
 
+export interface Guardrails {
+  maxTokensPerRun: number;
+  maxCostUsd: number;
+  rateLimitPerMin: number;
+  approvalThresholdUsd: number;
+  blockedActions: string[];
+}
+
 export interface Agent {
   id: string;
   name: string;
   role: string;
+  systemPrompt: string;
   model: string;
   tools: string[];
   channels: string[];
+  guardrails: Guardrails;
+}
+
+/** Editable fields the Agent Editor submits (create or patch). The repo fills defaults. */
+export interface AgentInput {
+  name: string;
+  role: string;
+  systemPrompt: string;
+  model: string;
+  tools: string[];
+  channels: string[];
+  guardrails: { approvalThresholdUsd: number; maxTokensPerRun: number; blockedActions: string[] };
 }
 
 export interface Run {

@@ -4,6 +4,10 @@ import { api } from './api';
 import type { Health, Route } from './types';
 import { Dashboard } from './screens/Dashboard';
 import { Runs } from './screens/Runs';
+import { Agents } from './screens/Agents';
+import { AgentEditor } from './screens/AgentEditor';
+import { Workflows } from './screens/Workflows';
+import { Builder } from './screens/Builder';
 import { Placeholder } from './screens/Placeholder';
 
 interface NavItem {
@@ -34,12 +38,12 @@ const LABEL: Record<Route, string> = Object.fromEntries(NAV.map((n) => [n.route,
 
 export function App() {
   const [route, setRoute] = useState<Route>('dashboard');
-  const [runId, setRunId] = useState<string | undefined>(undefined);
+  const [param, setParam] = useState<string | undefined>(undefined); // runId or agentId, per route
   const [health, setHealth] = useState<Health | null>(null);
 
   const nav = (r: Route, id?: string) => {
     setRoute(r);
-    setRunId(id);
+    setParam(id);
   };
 
   useEffect(() => {
@@ -81,8 +85,12 @@ export function App() {
 
         <div className="content">
           {route === 'dashboard' && <Dashboard nav={nav} />}
-          {route === 'runs' && <Runs runId={runId} nav={nav} />}
-          {route !== 'dashboard' && route !== 'runs' && <Placeholder title={LABEL[route]} />}
+          {route === 'agents' && <Agents nav={nav} />}
+          {route === 'editor' && <AgentEditor agentId={param} nav={nav} />}
+          {route === 'workflows' && <Workflows nav={nav} />}
+          {route === 'builder' && <Builder workflowId={param} nav={nav} />}
+          {route === 'runs' && <Runs runId={param} nav={nav} />}
+          {['channels', 'evals'].includes(route) && <Placeholder title={LABEL[route]} />}
         </div>
       </div>
     </div>
