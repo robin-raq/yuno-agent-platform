@@ -8,7 +8,7 @@ around Yuno's domain with a **Cross-Border Payout (remittance)** workflow.
 > **Status:** functional end-to-end and locally runnable with one command. No real money moves —
 > payouts are simulated; Telegram payments are out of scope (pay-in deferred).
 
-**Live demo:** _<RAILWAY_URL — added after deploy>_
+**Live demo:** https://yuno-agent-platform-production.up.railway.app
 
 ---
 
