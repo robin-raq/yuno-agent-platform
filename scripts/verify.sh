@@ -10,9 +10,13 @@ npm run -s typecheck
 echo "== verify: tests (vitest run) =="
 npm run -s test
 
-# Web build is added to this gate once the Vite app lands.
+# Web build is part of the gate. Install deps first on a fresh checkout.
 if [ -f web/package.json ]; then
-  echo "== verify: web build =="
+  if [ ! -d web/node_modules ]; then
+    echo "== verify: web deps (install) =="
+    npm --prefix web install --silent
+  fi
+  echo "== verify: web build (typecheck + vite) =="
   npm --prefix web run -s build
 fi
 
