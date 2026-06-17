@@ -9,7 +9,7 @@ import { AgentEditor } from './screens/AgentEditor';
 import { Workflows } from './screens/Workflows';
 import { Builder } from './screens/Builder';
 import { Evaluations } from './screens/Evaluations';
-import { Placeholder } from './screens/Placeholder';
+import { Channels } from './screens/Channels';
 
 interface NavItem {
   route: Route;
@@ -92,7 +92,7 @@ export function App() {
           {route === 'builder' && <Builder workflowId={param} nav={nav} />}
           {route === 'runs' && <Runs runId={param} nav={nav} />}
           {route === 'evals' && <Evaluations />}
-          {route === 'channels' && <Placeholder title={LABEL[route]} />}
+          {route === 'channels' && <Channels />}
         </div>
       </div>
     </div>
