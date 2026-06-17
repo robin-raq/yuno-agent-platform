@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api';
-import type { Agent, EventLog, Health, Run } from '../types';
+import type { Agent, EventLog, Health, Nav, Run } from '../types';
 
 const initials = (name: string) =>
   name.split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase();
@@ -9,7 +9,7 @@ const hhmmss = (iso: string) => new Date(iso).toLocaleTimeString([], { hour12: f
 
 const levelClass = (e: EventLog) => (e.type === 'tool_call' ? 'tool' : e.level);
 
-export function Dashboard({ onNavigateRuns }: { onNavigateRuns: () => void }) {
+export function Dashboard({ nav }: { nav: Nav }) {
   const [health, setHealth] = useState<Health | null>(null);
   const [agents, setAgents] = useState<Agent[]>([]);
   const [runs, setRuns] = useState<Run[]>([]);
@@ -38,7 +38,7 @@ export function Dashboard({ onNavigateRuns }: { onNavigateRuns: () => void }) {
           <h1>Dashboard</h1>
           <p>Live view of agents, runs, and spend across the workspace.</p>
         </div>
-        <button className="btn" onClick={onNavigateRuns}>View runs</button>
+        <button className="btn" onClick={() => nav('runs')}>View runs</button>
       </div>
 
       <div className="grid metrics" style={{ marginBottom: 18 }}>

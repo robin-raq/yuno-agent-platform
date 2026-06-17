@@ -1,19 +1,10 @@
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { api } from './api';
-import type { Health } from './types';
+import type { Health, Route } from './types';
 import { Dashboard } from './screens/Dashboard';
+import { Runs } from './screens/Runs';
 import { Placeholder } from './screens/Placeholder';
-
-type Route =
-  | 'dashboard'
-  | 'agents'
-  | 'editor'
-  | 'workflows'
-  | 'builder'
-  | 'runs'
-  | 'channels'
-  | 'evals';
 
 interface NavItem {
   route: Route;
@@ -43,7 +34,13 @@ const LABEL: Record<Route, string> = Object.fromEntries(NAV.map((n) => [n.route,
 
 export function App() {
   const [route, setRoute] = useState<Route>('dashboard');
+  const [runId, setRunId] = useState<string | undefined>(undefined);
   const [health, setHealth] = useState<Health | null>(null);
+
+  const nav = (r: Route, id?: string) => {
+    setRoute(r);
+    setRunId(id);
+  };
 
   useEffect(() => {
     api.health().then(setHealth).catch(() => setHealth(null));
@@ -61,7 +58,8 @@ export function App() {
             {n.sep && <div className="nav-sep" />}
             <div
               className={`nav-item${route === n.route ? ' active' : ''}`}
-              onClick={() => setRoute(n.route)}
+              data-route={n.route}
+              onClick={() => nav(n.route)}
             >
               {n.icon} {n.label}
             </div>
@@ -82,7 +80,9 @@ export function App() {
         </div>
 
         <div className="content">
-          {route === 'dashboard' ? <Dashboard onNavigateRuns={() => setRoute('runs')} /> : <Placeholder title={LABEL[route]} />}
+          {route === 'dashboard' && <Dashboard nav={nav} />}
+          {route === 'runs' && <Runs runId={runId} nav={nav} />}
+          {route !== 'dashboard' && route !== 'runs' && <Placeholder title={LABEL[route]} />}
         </div>
       </div>
     </div>
