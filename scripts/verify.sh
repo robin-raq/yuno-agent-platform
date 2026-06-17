@@ -10,6 +10,9 @@ npm run -s typecheck
 echo "== verify: tests (vitest run) =="
 npm run -s test
 
+echo "== verify: evals (deterministic layer) =="
+npm run -s eval:ci
+
 # Web build is part of the gate. Install deps first on a fresh checkout.
 if [ -f web/package.json ]; then
   if [ ! -d web/node_modules ]; then
